@@ -18,10 +18,10 @@ const Dashboard = () => {
           credentials: "include",
         });
 
-        if (authResponse.status !== 200) {
-          navigate("/login");
-          return;
-        }
+        // if (authResponse.status !== 200) {
+        //   navigate("/login");
+        //   return;
+        // }
 
         const authData = await authResponse.json();
         setUsername(authData.username || "User");

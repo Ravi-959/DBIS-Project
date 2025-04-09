@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { apiUrl } from "../config/config";
+import LoginModal from "../pages/LoginModal.jsx";
 import "../css/Navbar.css";
 import {
   FaMagnifyingGlass,
@@ -12,6 +13,7 @@ import {
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [showLoginModal,setShowLoginModal] = useState(false);
   const [categories, setCategories] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -54,6 +56,24 @@ const Navbar = () => {
 
     fetchCategories();
   }, []);
+
+  const checkAuthAndNavigate = async (path) => {
+    try {
+      const response = await fetch(`${apiUrl}/isloggedin`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        navigate(path);
+      } else {
+        setShowLoginModal(true); // Show popup instead of redirecting
+      }
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      setShowLoginModal(true);
+    }
+  };
 
 
   const handleLogout = async (e) => {
@@ -145,10 +165,14 @@ const Navbar = () => {
         <FaCommentDots className="icon" />
         <FaBell className="icon" />
         <div className="avatar" onClick={() => navigate("/profile")}>C</div>
-        <button className="sell-btn" onClick={() => navigate("/sell")}>+ SELL</button>
+        <button className="sell-btn" onClick={() => checkAuthAndNavigate("/sell")}>+ SELL</button>
         <button className="logout-btn" onClick={handleLogout}>Logout</button>
-      </div>
+      </div>        
+
+      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
+
     </nav>
+
   );
 };
 

@@ -112,6 +112,9 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/isLoggedIn", async (req, res) => {
+
+  console.log("checking logged in");
+  
   if (!req.session.userId) {
     return res.status(400).json({ message: "Not logged in" });
   }
@@ -244,6 +247,25 @@ app.post('/listings', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+app.post("/ad-details", async (req, res) => {
+  console.log("log in product details");
+  console.log(req.body);
+  const { listing_id } = req.body;
+  try {
+    const result = await pool.query("SELECT * FROM listings WHERE listing_id = $1", [listing_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Product not found" });
+    }
+    res.status(200).json({ message: "Product fetched successfully", product: result.rows[0] });
+
+  } catch (error) {
+    console.error("Error fetching product details", error);
+    res.status(500).json({ message: "Error fetching product details" });
   }
 });
 

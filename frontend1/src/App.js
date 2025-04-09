@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/Notfound";
+import Addetails from "./pages/Addetails";
 import Sell from "./pages/sell";
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/sell" element={<Sell />} />
+        <Route path="/listing/:listing_id" element={<Addetails />} />
         <Route path="*" element={<NotFound />} /> {/* 404 Page */}
       </Routes>
   );

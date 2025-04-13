@@ -13,9 +13,10 @@ import {
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [showLoginModal,setShowLoginModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [categories, setCategories] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -24,24 +25,20 @@ const Navbar = () => {
         setIsDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  // Fetch categories and subcategories once per session
   useEffect(() => {
     const sessionKey = 'cachedCategories';
-    
     const fetchCategories = async () => {
       const cachedData = sessionStorage.getItem(sessionKey);
       if (cachedData) {
         setCategories(JSON.parse(cachedData));
         return;
       }
-
       try {
         const response = await fetch(`${apiUrl}/categories-with-subcategories`);
         if (response.ok) {
@@ -53,8 +50,23 @@ const Navbar = () => {
         console.error("Error fetching categories:", error);
       }
     };
-
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/isloggedin`, {
+          method: "GET",
+          credentials: "include",
+        });
+        setIsLoggedIn(response.ok);
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        setIsLoggedIn(false);
+      }
+    };
+    checkLogin();
   }, []);
 
   const checkAuthAndNavigate = async (path) => {
@@ -67,14 +79,13 @@ const Navbar = () => {
       if (response.ok) {
         navigate(path);
       } else {
-        setShowLoginModal(true); // Show popup instead of redirecting
+        setShowLoginModal(true);
       }
     } catch (error) {
       console.error("Error checking authentication:", error);
       setShowLoginModal(true);
     }
   };
-
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -83,8 +94,8 @@ const Navbar = () => {
         method: "POST",
         credentials: "include",
       });
-
       if (response.status === 200) {
+        setIsLoggedIn(false);
         navigate("/login");
       } else {
         console.error("Logout failed");
@@ -97,27 +108,23 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       {/* Left Section */}
-       <div className="navbar-left">
+      <div className="navbar-left">
         <div className="logo" onClick={() => navigate("/dashboard")}>OLX</div>
-        
         <div className="categories-dropdown-container" ref={dropdownRef}>
-          <button 
+          <button
             className="categories-dropdown-btn"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
-            ALL CATEGORIES 
-            <FaChevronDown 
-              className={`dropdown-icon ${isDropdownOpen ? 'rotate' : ''}`} 
-            />
+            ALL CATEGORIES
+            <FaChevronDown className={`dropdown-icon ${isDropdownOpen ? 'rotate' : ''}`} />
           </button>
-          
           {isDropdownOpen && (
             <div className="categories-dropdown">
               <div className="dropdown-header">ALL CATEGORIES</div>
               <div className="categories-grid">
                 {categories.map((category) => (
                   <div key={category.category_id} className="category-group">
-                    <div 
+                    <div
                       className="category-item"
                       onClick={() => {
                         navigate(`/category/${category.category_id}`);
@@ -146,7 +153,7 @@ const Navbar = () => {
         </div>
       </div>
 
-
+      {/* Center Section */}
       <div className="navbar-center">
         <input
           type="text"
@@ -158,21 +165,23 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Right section */}
+      {/* Right Section */}
       <div className="navbar-right">
-
         <FaHeart className="icon" onClick={() => navigate("/wishlist")} />
         <FaCommentDots className="icon" />
         <FaBell className="icon" />
         <div className="avatar" onClick={() => navigate("/profile")}>C</div>
         <button className="sell-btn" onClick={() => checkAuthAndNavigate("/sell")}>+ SELL</button>
-        <button className="logout-btn" onClick={handleLogout}>Logout</button>
-      </div>        
+
+        {isLoggedIn ? (
+          <button className="auth-btn" onClick={handleLogout}>Logout</button>
+        ) : (
+          <button className="auth-btn" onClick={() => setShowLoginModal(true)}>Sign In / Sign Up</button>
+        )}
+      </div>
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
-
     </nav>
-
   );
 };
 

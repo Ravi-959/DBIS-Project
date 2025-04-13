@@ -26,6 +26,7 @@ const Addetails = () => {
         }
 
         setListing(data.product);
+
       } catch (err) {
         console.error("Fetch error:", err);
         setError(err.message);
@@ -83,14 +84,13 @@ const Addetails = () => {
       <Navbar />
       <div className="product-details-container">
         <div className="product-image">
-          {/* <img 
-            src={listing.image_url || "/placeholder-image.jpg"} 
+          <img 
+            src={`${apiUrl}${listing.primary_image_url}`} 
             alt={listing.name} 
             onError={(e) => {
-              e.target.src = "/placeholder-image.jpg";
+              e.target.src = `${apiUrl}$/placeholder-image.jpg`;
             }}
-          /> */}
-          Image
+          />
         </div>
 
         <div className="product-info">

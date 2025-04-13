@@ -18,16 +18,11 @@ const Dashboard = () => {
           credentials: "include",
         });
 
-        // if (authResponse.status !== 200) {
-        //   navigate("/login");
-        //   return;
-        // }
-
         const authData = await authResponse.json();
         setUsername(authData.username || "User");
 
-        // Fetch listings
-        const listingsResponse = await fetch(`${apiUrl}/listings`);
+        // Fetch listings with images
+        const listingsResponse = await fetch(`${apiUrl}/listings-with-images`);
         if (listingsResponse.ok) {
           const listingsData = await listingsResponse.json();
           setListings(listingsData);
@@ -46,7 +41,6 @@ const Dashboard = () => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN').format(price);
   };
-
 
   return (
     <div className="dashboard-container">
@@ -68,12 +62,23 @@ const Dashboard = () => {
                   className="listing-card"
                   onClick={() => navigate(`/listing/${listing.listing_id}`)}
                 >
-                  {/* {listing.is_featured && (
-                    <div className="featured-badge">FEATURED</div>
-                  )} */}
-                  <div className="listing-image-placeholder">
-                    {/* Replace with actual image when available */}
-                    <span>Image</span>
+                  <div className="listing-image-container">
+                  {listing.images && listing.images.length > 0 ? (
+                    <img 
+                      src={`${apiUrl}${listing.images[0].image_url}`}
+                      alt={listing.product_name}
+                      className="listing-image"
+                      onError={(e) => {
+                        console.error('Image failed to load:', e.target.src);
+                        e.target.onerror = null;
+                        e.target.src = `${apiUrl}/placeholder.jpg`;
+                      }}
+                    />
+                    ) : (
+                      <div className="listing-image-placeholder">
+                        <span>No Image</span>
+                      </div>
+                    )}
                   </div>
                   <div className="listing-details">
                     <div className="listing-price">₹{formatPrice(listing.price)}</div>
@@ -84,7 +89,6 @@ const Dashboard = () => {
                         : listing.description}
                     </div>
                     <div className="listing-location">MUMBAI</div>
-                    {/* <div className="listing-time">{getTimeAgo(listing.created_at)}</div> */}
                   </div>
                 </div>
               ))}

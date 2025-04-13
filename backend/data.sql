@@ -47,3 +47,8 @@ INSERT INTO Subcategories (category_id, name) VALUES
 (6, 'Books'),
 (6, 'Musical Instruments'),
 (6, 'Sports Equipment');
+
+INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES
+(1,'/images/alto1.jpg','t'),
+(2,'/images/mrfbat1.jpg','t'),
+(3,'/images/tatanexon1.jpg','t');

@@ -204,3 +204,21 @@
 .subcategory-item {
   padding-left: 10px;
 }
+
+.auth-btn {
+  background-color: transparent;
+  border: 1px solid #002f34;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #002f34;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.auth-btn:hover {
+  background-color: #002f34;
+  color: white;
+}

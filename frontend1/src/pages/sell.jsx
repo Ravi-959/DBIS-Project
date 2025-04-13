@@ -7,6 +7,7 @@ const Sell = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [imageUrls, setImageUrls] = useState(['']); // Start with one empty URL field
   const [formData, setFormData] = useState({
     categoryId: '',
     subcategoryId: '',
@@ -53,6 +54,25 @@ const Sell = () => {
     fetchSubcategories();
   }, [formData.categoryId]);
 
+  const handleImageUrlChange = (index, value) => {
+    const newUrls = [...imageUrls];
+    newUrls[index] = value;
+    setImageUrls(newUrls);
+  };
+
+  const addImageUrlField = () => {
+    if (imageUrls.length < 5) {
+      setImageUrls([...imageUrls, '']);
+    }
+  };
+
+  const removeImageUrlField = (index) => {
+    if (imageUrls.length > 1) {
+      const newUrls = imageUrls.filter((_, i) => i !== index);
+      setImageUrls(newUrls);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -63,13 +83,20 @@ const Sell = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Filter out empty URLs
+    const validImageUrls = imageUrls.filter(url => url.trim() !== '');
+    
     try {
       const response = await fetch(`${apiUrl}/listings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          imageUrls: validImageUrls
+        }),
         credentials: 'include'
       });
 
@@ -167,6 +194,38 @@ const Sell = () => {
               required
             />
           </div>
+        </div>
+
+        <div className="form-group">
+          <label>Image URLs (Max 5)</label>
+          {imageUrls.map((url, index) => (
+            <div key={index} className="image-url-input">
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                placeholder="https://example.com/image.jpg"
+              />
+              {imageUrls.length > 1 && (
+                <button 
+                  type="button" 
+                  onClick={() => removeImageUrlField(index)}
+                  className="remove-url-btn"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          {imageUrls.length < 5 && (
+            <button 
+              type="button" 
+              onClick={addImageUrlField}
+              className="add-url-btn"
+            >
+              + Add Another Image URL
+            </button>
+          )}
         </div>
 
         <div className="form-group">

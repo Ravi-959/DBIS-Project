@@ -59,3 +59,11 @@ CREATE TABLE Purchases (
     FOREIGN KEY (seller_id) REFERENCES Users(user_id),
     FOREIGN KEY (listing_id) REFERENCES Listings(listing_id)
 );
+
+CREATE TABLE listing_images (
+  image_id SERIAL PRIMARY KEY,
+  listing_id INTEGER REFERENCES listings(listing_id) ON DELETE CASCADE,
+  image_url VARCHAR(255) NOT NULL,
+  is_primary BOOLEAN DEFAULT false,
+  FOREIGN KEY (listing_id) REFERENCES Listings(listing_id)
+);

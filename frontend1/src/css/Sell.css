@@ -77,6 +77,46 @@
   .submit-btn:hover {
     background-color: #005f6b;
   }
+
+  /* Image URL Input Styles */
+.image-url-input {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.image-url-input input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.remove-url-btn {
+  margin-left: 8px;
+  padding: 0 8px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.remove-url-btn:hover {
+  background: #cc0000;
+}
+
+.add-url-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: #f0f0f0;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-url-btn:hover {
+  background: #e0e0e0;
+}
   
   /* Responsive design */
   @media (max-width: 600px) {

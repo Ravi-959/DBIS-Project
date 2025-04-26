@@ -168,10 +168,10 @@ const Navbar = () => {
       {/* Right Section */}
       <div className="navbar-right">
         <FaHeart className="icon" onClick={() => navigate("/wishlist")} />
-        <FaCommentDots className="icon" />
+        <FaCommentDots className="icon" onClick={() => navigate("/chat")} />
         <FaBell className="icon" />
         <div className="avatar" onClick={() => navigate("/profile")}>C</div>
-        <button className="sell-btn" onClick={() => checkAuthAndNavigate("/sell")}>+ SELL</button>
+        <button className="sell-btn" onClick={() => checkAuthAndNavigate("/postad")}>+ SELL</button>
 
         {isLoggedIn ? (
           <button className="auth-btn" onClick={handleLogout}>Logout</button>

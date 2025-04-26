@@ -98,7 +98,7 @@ const Dashboard = () => {
               <p>No listings found. Be the first to sell something!</p>
               <button 
                 className="sell-now-btn"
-                onClick={() => navigate("/sell")}
+                onClick={() => navigate("/postad")}
               >
                 Start selling
               </button>

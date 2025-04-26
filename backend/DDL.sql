@@ -1,9 +1,15 @@
-DROP TABLE IF EXISTS Users CASCADE;
-DROP TABLE IF EXISTS Categories CASCADE;
-DROP TABLE IF EXISTS Subcategories CASCADE;
-DROP TABLE IF EXISTS Listings CASCADE;
+-- Drop tables in reverse order of dependency
+DROP TABLE IF EXISTS Listing_Attributes CASCADE;
+DROP TABLE IF EXISTS listing_images CASCADE;
 DROP TABLE IF EXISTS Messages CASCADE;
-DROP TABLE IF EXISTS Purchases CASCADE;
+DROP TABLE IF EXISTS Conversations CASCADE;
+DROP TABLE IF EXISTS Listings CASCADE;
+DROP TABLE IF EXISTS Category_Attributes CASCADE;
+DROP TABLE IF EXISTS Attribute_Options CASCADE;
+DROP TABLE IF EXISTS Attributes CASCADE;
+DROP TABLE IF EXISTS Subcategories CASCADE;
+DROP TABLE IF EXISTS Categories CASCADE;
+DROP TABLE IF EXISTS Users CASCADE;
 
 CREATE TABLE Users (
     user_id SERIAL PRIMARY KEY,
@@ -38,26 +44,79 @@ CREATE TABLE Listings (
     FOREIGN KEY (subcategory_id) REFERENCES Subcategories(subcategory_id) ON DELETE CASCADE
 );
 
-CREATE TABLE Messages (
-    message_id SERIAL PRIMARY KEY,
-    sender_id INT NOT NULL,
-    receiver_id INT NOT NULL,
-    listing_id INT,
-    content TEXT NOT NULL,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sender_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (receiver_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id) ON DELETE CASCADE
+-- Table for defining filterable attributes
+CREATE TABLE Attributes (
+    attribute_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    data_type VARCHAR(20) NOT NULL CHECK (data_type IN ('text', 'number', 'boolean', 'enum'))
 );
 
-CREATE TABLE Purchases (
-    purchase_id SERIAL PRIMARY KEY,
+-- Table for predefined options (for enum type attributes)
+CREATE TABLE Attribute_Options (
+    option_id SERIAL PRIMARY KEY,
+    attribute_id INT NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    FOREIGN KEY (attribute_id) REFERENCES Attributes(attribute_id) ON DELETE CASCADE,
+    UNIQUE (attribute_id, value)
+);
+
+-- Table linking categories to attributes
+CREATE TABLE Category_Attributes (
+    category_attribute_id SERIAL PRIMARY KEY,
+    category_id INT,
+    subcategory_id INT,
+    attribute_id INT NOT NULL,
+    is_required BOOLEAN DEFAULT false,
+    display_order INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (category_id) REFERENCES Categories(category_id) ON DELETE CASCADE,
+    FOREIGN KEY (subcategory_id) REFERENCES Subcategories(subcategory_id) ON DELETE CASCADE,
+    FOREIGN KEY (attribute_id) REFERENCES Attributes(attribute_id) ON DELETE CASCADE,
+    CHECK (category_id IS NOT NULL OR subcategory_id IS NOT NULL)
+);
+
+-- Table storing the actual attribute values for listings
+CREATE TABLE Listing_Attributes (
+    listing_attribute_id SERIAL PRIMARY KEY,
+    listing_id INT NOT NULL,
+    attribute_id INT NOT NULL,
+    text_value TEXT,
+    number_value DECIMAL(20, 2),
+    boolean_value BOOLEAN,
+    option_id INT,
+    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id) ON DELETE CASCADE,
+    FOREIGN KEY (attribute_id) REFERENCES Attributes(attribute_id) ON DELETE CASCADE,
+    FOREIGN KEY (option_id) REFERENCES Attribute_Options(option_id) ON DELETE CASCADE,
+    CHECK (
+        (text_value IS NOT NULL AND number_value IS NULL AND boolean_value IS NULL AND option_id IS NULL) OR
+        (text_value IS NULL AND number_value IS NOT NULL AND boolean_value IS NULL AND option_id IS NULL) OR
+        (text_value IS NULL AND number_value IS NULL AND boolean_value IS NOT NULL AND option_id IS NULL) OR
+        (text_value IS NULL AND number_value IS NULL AND boolean_value IS NULL AND option_id IS NOT NULL)
+    )
+);
+
+-- Conversation table to track chat threads between users
+CREATE TABLE Conversations (
+    conversation_id SERIAL PRIMARY KEY,
     buyer_id INT NOT NULL,
     seller_id INT NOT NULL,
     listing_id INT NOT NULL,
-    FOREIGN KEY (buyer_id) REFERENCES Users(user_id),
-    FOREIGN KEY (seller_id) REFERENCES Users(user_id),
-    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (buyer_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id) ON DELETE CASCADE,
+    UNIQUE (buyer_id, seller_id, listing_id) -- prevent duplicate conversation for same listing
+);
+
+
+CREATE TABLE Messages (
+    message_id SERIAL PRIMARY KEY,
+    conversation_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
+    message_text TEXT NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (conversation_id) REFERENCES Conversations(conversation_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE listing_images (

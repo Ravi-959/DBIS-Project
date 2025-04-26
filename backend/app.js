@@ -115,7 +115,7 @@ app.post("/login", async (req, res) => {
 
 app.get("/isLoggedIn", async (req, res) => {
 
-  console.log("checking logged in");
+  // console.log("checking logged in");
   
   if (!req.session.userId) {
     return res.status(400).json({ message: "Not logged in" });
@@ -127,8 +127,9 @@ app.get("/isLoggedIn", async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(400).json({ message: "Not logged in" });
     }
-    res.status(200).json({ message: "Logged in", username: result.rows[0].username,isAuthenticated:true });
-    console.log("User Id: $1",[req.session.userId]);
+    const user_id = req.session.userId;
+    res.status(200).json({ message: "Logged in", username: result.rows[0].username,isAuthenticated:true, user_id : user_id });
+    // console.log("User Id: $1",[req.session.userId]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error checking login status" });
@@ -195,24 +196,121 @@ app.get('/subcategories', async (req, res) => {
   }
 });
 
-app.get('/listings', async (req, res) => {
+// Get attributes for a category
+app.get('/categories/:id/attributes', async (req, res) => {
   try {
-    const result = await pool.query(`
+      const { id } = req.params;
+      
+      // Get category attributes with options for enum types
+      const attributesQuery = `
+          SELECT 
+              a.attribute_id, 
+              a.name, 
+              a.data_type,
+              ca.is_required,
+              ca.display_order,
+              (
+                  SELECT json_agg(ao.value ORDER BY ao.value)
+                  FROM attribute_options ao
+                  WHERE ao.attribute_id = a.attribute_id
+              ) AS options
+          FROM category_attributes ca
+          JOIN attributes a ON ca.attribute_id = a.attribute_id
+          WHERE ca.category_id = $1
+          ORDER BY ca.display_order
+      `;
+      
+      const { rows } = await pool.query(attributesQuery, [id]);
+      
+      res.json(rows);
+  } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server error');
+  }
+});
+
+app.get('/subcategories/:id/attributes', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First get the subcategory to find its parent category
+    const subcategoryQuery = 'SELECT category_id FROM subcategories WHERE subcategory_id = $1';
+    const subcategoryResult = await pool.query(subcategoryQuery, [id]);
+    
+    if (subcategoryResult.rows.length === 0) {
+      return res.status(404).send('Subcategory not found');
+    }
+    
+    const categoryId = subcategoryResult.rows[0].category_id;
+    
+    // Get attributes from both category and subcategory
+    const attributesQuery = `
+      WITH category_attrs AS (
+        SELECT 
+          a.attribute_id, 
+          a.name, 
+          a.data_type,
+          ca.is_required,
+          ca.display_order,
+          (
+            SELECT json_agg(ao.value ORDER BY ao.value)
+            FROM attribute_options ao
+            WHERE ao.attribute_id = a.attribute_id
+          ) AS options,
+          'category' AS source
+        FROM category_attributes ca
+        JOIN attributes a ON ca.attribute_id = a.attribute_id
+        WHERE ca.category_id = $1
+      ),
+      subcategory_attrs AS (
+        SELECT 
+          a.attribute_id, 
+          a.name, 
+          a.data_type,
+          ca.is_required,
+          ca.display_order,
+          (
+            SELECT json_agg(ao.value ORDER BY ao.value)
+            FROM attribute_options ao
+            WHERE ao.attribute_id = a.attribute_id
+          ) AS options,
+          'subcategory' AS source
+        FROM category_attributes ca
+        JOIN attributes a ON ca.attribute_id = a.attribute_id
+        WHERE ca.subcategory_id = $2
+      ),
+      combined_attrs AS (
+        -- Get all attributes from both sources
+        SELECT * FROM category_attrs
+        UNION ALL
+        SELECT * FROM subcategory_attrs
+      )
       SELECT 
-        l.listing_id,
-        l.name,
-        l.description,
-        c.name AS category_name,
-        s.name AS subcategory_name,
-        l.price
-      FROM listings l
-      JOIN categories c ON l.category_id = c.category_id
-      JOIN subcategories s ON l.subcategory_id = s.subcategory_id
-    `);
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
+        attribute_id, 
+        name, 
+        data_type,
+        is_required,
+        display_order,
+        options
+      FROM (
+        SELECT 
+          *,
+          ROW_NUMBER() OVER (
+            PARTITION BY attribute_id 
+            ORDER BY CASE WHEN source = 'subcategory' THEN 0 ELSE 1 END
+          ) AS rn
+        FROM combined_attrs
+      ) ranked_attrs
+      WHERE rn = 1  -- Take only one row per attribute (prefer subcategory)
+      ORDER BY display_order
+    `;
+    
+    const { rows } = await pool.query(attributesQuery, [categoryId, id]);
+    
+    res.json(rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
@@ -253,40 +351,48 @@ app.get('/listings-with-images', async (req, res) => {
   }
 });
 
+
 app.post('/listings', async (req, res) => {
   try {
-
     const { 
-      categoryId, 
-      subcategoryId, 
-      productName, 
-      productBrand, 
-      description, 
-      price, 
-      contactInfo,
-      imageUrls = []
+        categoryId, 
+        subcategoryId, 
+        productName, 
+        description, 
+        price, 
+        contactInfo, 
+        imageUrls,
+        attributes 
     } = req.body;
-
-    const userId = req.session.userId; // Assuming you have user session
-
-    const listingResult = await pool.query(
-      `INSERT INTO listings (
-        name, category_id, subcategory_id, user_id, 
-        price, description
-      ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING listing_id`,
-      [
+    
+    const userId = req.session.userId;
+      
+    // 1. Insert the main listing
+    const listingQuery = `
+        INSERT INTO listings (
+            name, 
+            category_id, 
+            subcategory_id, 
+            user_id, 
+            price, 
+            description
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING listing_id
+    `;
+    
+    const listingValues = [
         productName,
         categoryId,
         subcategoryId,
         userId,
         price,
-        description,
-      ]
-    );
-
-    const listingId = listingResult.rows[0].listing_id
-
-    // Insert image URLs
+        description
+      ];
+    
+    const listingResult = await pool.query(listingQuery, listingValues);
+    const listingId = listingResult.rows[0].listing_id;
+    
+    // 2. Insert images
     if (imageUrls.length > 0) {
       for (let i = 0; i < imageUrls.length; i++) {
         const url = imageUrls[i];
@@ -302,50 +408,147 @@ app.post('/listings', async (req, res) => {
         }
       }
     }
-
+    
+    // 3. Insert attributes
+    if (attributes && Object.keys(attributes).length > 0) {
+        const attributeEntries = Object.entries(attributes);
+        
+        for (const [attributeId, value] of attributeEntries) {
+            // Determine which column to use based on attribute type
+            const attributeTypeQuery = 'SELECT data_type FROM attributes WHERE attribute_id = $1';
+            const { rows: [attr] } = await pool.query(attributeTypeQuery, [attributeId]);
+            
+            let column;
+            let normalizedValue = value;
+            
+            if (attr.data_type === 'number') {
+                column = 'number_value';
+                normalizedValue = parseFloat(value);
+            } 
+            else if (attr.data_type === 'boolean') {
+                column = 'boolean_value';
+                normalizedValue = Boolean(value);
+            }
+            else if (attr.data_type === 'enum') {
+                column = 'option_id';
+                // Get option_id for the selected value
+                const optionQuery = 'SELECT option_id FROM attribute_options WHERE attribute_id = $1 AND value = $2';
+                const { rows: [option] } = await pool.query(optionQuery, [attributeId, value]);
+                normalizedValue = option?.option_id;
+            }
+            else {
+                column = 'text_value';
+            }
+            
+            if (normalizedValue !== null && normalizedValue !== undefined) {
+                const insertAttrQuery = `
+                    INSERT INTO listing_attributes (
+                        listing_id, 
+                        attribute_id, 
+                        ${column}
+                    ) VALUES ($1, $2, $3)
+                `;
+                await pool.query(insertAttrQuery, [listingId, attributeId, normalizedValue]);
+            }
+        }
+    }    
     res.status(201).json({ listingId });
-  } catch (error) {
-
-    console.error('Error creating listing:', error);
-    res.status(500).json({ error: 'Failed to create listing' });
-  }
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
 });
 
 
 app.post("/ad-details", async (req, res) => {
-  console.log("log in product details");
-  console.log(req.body);
   const { listing_id } = req.body;
+  
   try {
-    const result = await pool.query(
-      `SELECT 
-  l.*,
-  (
-    SELECT image_url 
-    FROM listing_images 
-    WHERE listing_id = l.listing_id
-    ORDER BY is_primary DESC, image_id ASC
-    LIMIT 1
-  ) AS primary_image_url
-FROM listings l
-WHERE l.listing_id = $1`
-      , [listing_id]);
+    // Get listing details with primary image
+    const listingQuery = `
+      SELECT 
+        l.*,
+        c.name AS category_name,
+        s.name AS subcategory_name,
+        (
+          SELECT image_url 
+          FROM listing_images 
+          WHERE listing_id = l.listing_id
+          ORDER BY is_primary DESC, image_id ASC
+          LIMIT 1
+        ) AS primary_image_url
+      FROM listings l
+      JOIN categories c ON l.category_id = c.category_id
+      JOIN subcategories s ON l.subcategory_id = s.subcategory_id
+      WHERE l.listing_id = $1
+    `;
 
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Product not found" });
+    // Get all attributes for the listing
+    const attributesQuery = `
+      SELECT 
+        a.attribute_id,
+        a.name AS attribute_name,
+        a.data_type,
+        la.text_value,
+        la.number_value,
+        la.boolean_value,
+        ao.value AS option_value
+      FROM listing_attributes la
+      JOIN attributes a ON la.attribute_id = a.attribute_id
+      LEFT JOIN attribute_options ao ON la.option_id = ao.option_id
+      WHERE la.listing_id = $1
+      ORDER BY a.name
+    `;
+
+    // Execute both queries in parallel
+    const [listingResult, attributesResult] = await Promise.all([
+      pool.query(listingQuery, [listing_id]),
+      pool.query(attributesQuery, [listing_id])
+    ]);
+
+    if (listingResult.rows.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
     }
-    res.status(200).json({ message: "Product fetched successfully", product: result.rows[0] });
 
-    console.log(result.rows[0]);
+    const response = {
+      product: listingResult.rows[0],
+      attributes: attributesResult.rows
+    };
+
+    res.status(200).json(response);
 
   } catch (error) {
-    console.error("Error fetching product details", error);
+    console.error("Error fetching product details:", error);
     res.status(500).json({ message: "Error fetching product details" });
   }
 });
 
+app.post("/category_name", async (req, res) => {
+  console.log("Request for category name");
+  const { category_id} = req.body;
+  
+  try {
+    const result = await pool.query(
+      "SELECT name FROM categories WHERE category_id = $1", 
+      [category_id]  // Corrected parameter array
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "category not found" });
+    }
+    
+    res.status(200).json({ name: result.rows[0].name });
+  } catch (error) {
+    console.error("Error fetching subcategory name", error);
+    res.status(500).json({ 
+      message: "Error fetching subcategory name",
+      error: error.message 
+    });
+  }
+});
+
 app.post("/subcategory_name", async (req, res) => {
-  console.log("Request for subcategory name");
+  // console.log("Request for subcategory name");
   const { category_id, subcategory_id } = req.body;
   
   try {
@@ -400,12 +603,12 @@ app.post("/products_by_subcategory", async (req, res) => {
 });
 
 app.post("/products_by_category", async (req, res) => {
-  console.log("Request for products by category");
-  console.log(req.body);
+  // console.log("Request for products by category");
+  // console.log(req.body);
   const { category_id } = req.body;
   
   try {
-    console.log("Category ID:", category_id); // Debugging line
+    // console.log("Category ID:", category_id); // Debugging line
     const result = await pool.query(`
       SELECT 
         l.*,
@@ -444,6 +647,160 @@ app.post("/products_by_category", async (req, res) => {
     res.status(500).json({ 
       message: "Error fetching products by category" 
     });
+  }
+});
+
+
+////////////////////////////////////////////////////
+// conversations and chats
+// Create or get an existing conversation   - Charan singh
+
+app.post("/conversations", async (req, res) => {
+  const { buyer_id, seller_id, listing_id } = req.body;
+
+  try {
+    // Check if conversation already exists
+    const existing = await pool.query(
+      `SELECT * FROM Conversations WHERE buyer_id = $1 AND seller_id = $2 AND listing_id = $3`,
+      [buyer_id, seller_id, listing_id]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(200).json({ conversation: existing.rows[0] });
+    }
+    console.log("Oy there mate");
+  
+    // Create new conversation
+    const result = await pool.query(
+      `INSERT INTO Conversations (buyer_id, seller_id, listing_id) VALUES ($1, $2, $3) RETURNING *`,
+      [buyer_id, seller_id, listing_id]
+    );
+    res.status(201).json({ conversation: result.rows[0] });
+
+  }
+  catch(err){
+    console.error(err);
+    res.status(500).json({ error: "Error creating conversation" });
+  }
+});
+
+// ✅ Fetch all conversations for a user (uses :userId param)
+app.get("/conversations/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const result = await pool.query(
+      `SELECT c.*, u.username AS buyer_name, u2.username AS seller_name, l.name AS listing_name
+       FROM Conversations c
+       JOIN Users u ON c.buyer_id = u.user_id
+       JOIN Users u2 ON c.seller_id = u2.user_id
+       JOIN Listings l ON c.listing_id = l.listing_id
+       WHERE c.buyer_id = $1 OR c.seller_id = $1
+       ORDER BY c.created_at DESC`,
+      [userId]
+    );
+    console.log("Oy there mate");
+    console.log(result.rows[0]);  // Log newly created conversation
+
+    res.status(200).json({ conversations: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching conversations" });
+  }
+});
+
+// Send a message
+app.post("/messages", async (req, res) => {
+  const { conversation_id, sender_id, message_text } = req.body;
+
+  try {
+    // Get the conversation to determine receiver
+    const convo = await pool.query(
+      `SELECT buyer_id, seller_id FROM Conversations WHERE conversation_id = $1`,
+      [conversation_id]
+    );
+
+    if (convo.rows.length === 0) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    const { buyer_id, seller_id } = convo.rows[0];
+    const receiver_id = sender_id === buyer_id ? seller_id : buyer_id;
+
+    const result = await pool.query(
+      `INSERT INTO Messages (conversation_id, sender_id, receiver_id, message_text)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [conversation_id, sender_id, receiver_id, message_text]
+    );
+
+    res.status(201).json({ message: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error sending message" });
+  }
+});
+
+// Get messages for a conversation
+app.get("/messages/:conversation_id", async (req, res) => {
+  const { conversation_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT m.*, u.username FROM Messages m JOIN Users u ON m.sender_id = u.user_id
+       WHERE m.conversation_id = $1 ORDER BY m.sent_at ASC`,
+      [conversation_id]
+    );
+
+    res.status(200).json({ messages: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching messages" });
+  }
+});
+
+app.post("/check-or-create-conversation", async (req, res) => {
+  const { user_id_1, user_id_2 } = req.body; // user_id_1 should be the buyer, user_id_2 should be the seller
+
+  console.log("Received request:", { user_id_1, user_id_2 });
+
+  try {
+    // Validate if user IDs are present
+    if (!user_id_1 || !user_id_2) {
+      return res.status(400).json({ message: "Missing user IDs" });
+    }
+
+    // Query to check if a conversation already exists between the buyer and seller
+    const result = await pool.query(
+      "SELECT * FROM conversations WHERE (buyer_id = $1 AND seller_id = $2) OR (buyer_id = $2 AND seller_id = $1)",
+      [user_id_1, user_id_2]
+    );
+
+    if (result.rows.length > 0) {
+      // If conversation exists, return the conversation_id
+      console.log("Conversation found:", result.rows[0].conversation_id);
+      return res.status(200).json({
+        conversation_id: result.rows[0].conversation_id,
+        other_user_id: user_id_2,
+        other_username: "Some Username", // Fetch the actual username from the users table if needed
+      });
+    } else {
+      // If no conversation exists, create a new one
+      const insertResult = await pool.query(
+        "INSERT INTO conversations (buyer_id, seller_id, listing_id) VALUES ($1, $2, $3) RETURNING conversation_id",
+        [user_id_1, user_id_2, 1] // Assuming `listing_id` is 1 for now, replace it with actual listing_id
+      );
+
+      console.log("Created new conversation:", insertResult.rows[0].conversation_id);
+
+      return res.status(200).json({
+        conversation_id: insertResult.rows[0].conversation_id,
+        other_user_id: user_id_2,
+        other_username: "Some Username", // Fetch from DB
+      });
+    }
+  } catch (error) {
+    console.error("Error in /check-or-create-conversation:", error);
+    return res.status(500).json({ message: "Server error", details: error.message });
   }
 });
 

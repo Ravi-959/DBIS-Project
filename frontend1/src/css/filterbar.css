@@ -1,0 +1,43 @@
+.filter-bar {
+    width: 250px;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-right: 1px solid #ddd;
+  }
+  
+  .filter-group {
+    margin-bottom: 1rem;
+  }
+  
+  .filter-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .filter-group input,
+  .filter-group select {
+    width: 100%;
+    padding: 0.5rem;
+  }
+  
+  .filter-number-range {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .filter-number-range input {
+    flex: 1;
+  }
+  
+  .filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .filter-actions button {
+    flex: 1;
+    padding: 0.5rem;
+  }

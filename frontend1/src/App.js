@@ -5,9 +5,10 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/Notfound";
 import Addetails from "./pages/Addetails";
-import Category from "./pages/Category";
-import Subcategory from "./pages/Subcategory";
-import Sell from "./pages/sell";
+import Filterings from "./pages/Filterings";
+import CategorySelection from "./pages/Categoryselection";
+import Chatbox from "./pages/Chatbox"; // Import Chatbox
+import SellDetails from "./pages/PostAd";
 
 function App() {
   return (
@@ -16,10 +17,12 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/sell" element={<Sell />} />
+        <Route path="/postad" element={<CategorySelection />} />
+        <Route path="/postad/details" element={<SellDetails />} />
         <Route path="/listing/:listing_id" element={<Addetails />} />
-        <Route path="/category/:category_id" element={<Category />} />
-        <Route path="/category/:category_id/:subcategory_id" element={<Subcategory />} />       
+        <Route path="/chat" element={<Chatbox />} />
+        <Route path="/category/:category_id" element={<Filterings />} />
+        <Route path="/category/:category_id/:subcategory_id" element={<Filterings />} />       
         <Route path="*" element={<NotFound />} /> {/* 404 Page */}
       </Routes>
   );

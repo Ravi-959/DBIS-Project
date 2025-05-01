@@ -1,0 +1,67 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{titling}
+\usepackage{setspace}
+\usepackage{tocloft}
+
+% Hyperref setup for blue links
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+% Custom blue link command
+\newcommand{\bluehref}[2]{\href{#1}{\textcolor{blue}{#2}}}
+
+% Title page formatting
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge \textbf{DBIS Project Report \\ OLX CLONE} \par}
+    \vspace{0.5cm}
+
+    
+    {\large \textbf{Team Members:} \par}
+    \vspace{0.5cm}
+    \begin{tabular}{ll}
+        Charan Singh & 22b0903 \\
+        Ravi Kishore & 22b0959 \\
+        Pavan Sekhar Naidu & 22b1028 \\
+        John Joseph & 22b1063 \\
+    \end{tabular}
+    \vspace{0.5cm}
+    
+    % {\large \textbf{Git Repository:} \par}
+    % \bluehref{https://github.com/your-repo/olx-clone}{https://github.com/your-repo/olx-clone}
+    
+    \tableofcontents
+\end{titlepage}
+
+% Table of contents
+\newpage
+
+% Main sections
+\section{Goals of the Project}
+
+\section{What was Implemented from a User Perspective}
+
+\section{Database Schema}
+
+\section{Front-end Functionalities}
+
+\section{Backend Functionalities}
+
+\section{Implementation}
+
+\section{Conclusions and Future Work}
+
+\end{document}

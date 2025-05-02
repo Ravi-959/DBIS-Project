@@ -1,3 +1,5 @@
+-- \i C:/Users/Ravi2005/Sem6/DBIS/Project/backend/data.sql
+
 INSERT INTO Categories (name) VALUES 
 ('Electronics'),
 ('Vehicles'),
@@ -10,178 +12,178 @@ INSERT INTO Categories (name) VALUES
 INSERT INTO Subcategories (category_id, name) VALUES
 (1, 'Mobiles'),
 (1, 'Laptops'),
-(1, 'Tablets'),
 (1, 'TVs'),
-(1, 'Cameras');
+(1, 'Cameras'); 
 
 -- Vehicles (category_id = 2)
 INSERT INTO Subcategories (category_id, name) VALUES
-(2, 'Cars'),
+(2, 'Cars'), -- 5
 (2, 'MotorBikes'),
-(2, 'Bicycle'),
-(2, 'Trucks');
+(2, 'Bicycle');
 
 -- Furniture (category_id = 3)
 INSERT INTO Subcategories (category_id, name) VALUES
-(3, 'Sofas'),
-(3, 'Beds'),
+(3, 'Beds'), -- 8
 (3, 'Chairs'),
-(3, 'Tables'),
 (3, 'Cupboards');
 
 -- Real Estate (category_id = 4)
 INSERT INTO Subcategories (category_id, name) VALUES
-(4, 'Apartments'),
-(4, 'Houses'),
-(4, 'Commercial'),
-(4, 'Plots');
+(4, 'Apartments'),  -- 11
+(4, 'Houses');
 
 -- Fashion (category_id = 5)
 INSERT INTO Subcategories (category_id, name) VALUES
-(5, 'Men'),
+(5, 'Men'),   --13
 (5, 'Women'),
 (5, 'Kids');
 
 -- Books & Music (category_id = 6)
 INSERT INTO Subcategories (category_id, name) VALUES
-(6, 'Books'),
-(6, 'Musical Instruments'),
+(6, 'Books'), --16
 (6, 'Sports Equipment');
 
--- First, insert all possible attributes with unique names
 INSERT INTO Attributes (name, data_type) VALUES
 -- Electronics attributes
-('Brand', 'enum'),
-('Model', 'text'),
-('Electronics Condition', 'enum'),
-('RAM', 'text'),
-('Storage', 'text'),
-('Screen Size', 'text'),
+('Electronics Brand', 'enum'),          -- 1
+('RAM', 'enum'),                        -- 2
+('Storage', 'enum'),                    -- 3
+('Laptop Processor','enum'),            -- 4
+('Lens Resolution', 'number'),          -- 5
+('Camera Category','enum'),             -- 6
+('TV Size','number'),                   -- 7
+('TV display','enum'),                  -- 8
 
 -- Vehicle attributes
-('Make', 'enum'),
-('Model Year', 'number'),
-('KM Driven', 'number'),
-('Fuel Type', 'enum'),
-('Transmission', 'enum'),
-('Vehicle Color', 'enum'),
+('Vehicle Company', 'enum'),            -- 9
+('Model Year', 'number'),               -- 10
+('KM Driven', 'number'),                -- 11
+('Fuel Type', 'enum'),                  -- 12
+('Transmission', 'enum'),               -- 13
+('Vehicle Color', 'enum'),              -- 14
 
 -- Furniture attributes
-('Material', 'enum'),
-('Furniture Color', 'enum'),
-('Furniture Condition', 'enum'),
-('Age', 'number'),
+('Furniture Brand', 'enum'),            -- 15
+('Material', 'enum'),                   -- 16
+('Furniture Color', 'enum'),            -- 17
+('Furniture Condition', 'enum'),        -- 18
 
 -- Real Estate attributes
-('BHK', 'enum'),
-('Area (sqft)', 'number'),
-('Furnishing', 'enum'),
-('Floor', 'number'),
-('Total Floors', 'number'),
-('Facing', 'enum'),
+('BHK', 'enum'),                        -- 19
+('Area (sqft)', 'number'),              -- 20
+('Floor', 'enum'),                      -- 21
+('Facing', 'enum'),                     -- 22
 
 -- Fashion attributes
-('Size', 'enum'),
-('Fashion Color', 'enum'),
-('Fabric Material', 'enum'),
-('Fashion Condition', 'enum'),
+('Fashion Brand','enum'),               -- 23
+('Size', 'number'),                     -- 24
+('Type', 'enum'),                       -- 25
+('Fabric Material', 'enum'),            -- 26
 
 -- Books & Sports attributes
-('Author/Brand', 'text'),
-('Book Condition', 'enum'),
-('Edition/Model', 'text');
+('Author', 'enum'),                     -- 27
+('Book Publisher', 'enum'),             -- 28
+('Sports Name','enum'),                 -- 29
+('Sports Equipment Brand','enum');      -- 30
 
--- Insert attribute options for enum types using the actual attribute IDs
--- Electronics options (attributes 1-6)
+
 INSERT INTO Attribute_Options (attribute_id, value) VALUES
-(1, 'Samsung'), (1, 'Apple'), (1, 'Xiaomi'), (1, 'OnePlus'), (1, 'Sony'),
-(3, 'New'), (3, 'Like New'), (3, 'Good'), (3, 'Fair'), (3, 'Poor'),
+-- Electronics attributes
+(1, 'Samsung'), (1, 'Apple'), (1, 'Sony'), (1, 'Asus'), (1, 'OnePlus'), (1, 'Xiaomi'),
+(2, '4GB'), (2, '6GB'), (2, '8GB'), (2, '12GB'), (2, '16GB'), (2, '32GB'),
+(3, '64GB'), (3, '128GB'), (3, '256GB'), (3, '512GB'), (3, '1TB'), (3, '2TB'),
+(4, 'i3'), (4, 'i5'), (4, 'i7'), (4, 'Ryzen 5'), (4, 'Ryzen 7'), (4, 'M1'),
+(6, 'DSLR'), (6, 'Mirrorless'), (6, 'Point & Shoot'), (6, 'Instant'), (6, 'CCTV'), (6, 'Action Camera'),
+(8, 'LED'), (8, 'OLED'), (8, 'QLED'), (8, 'LCD'), (8, 'Plasma'), (8, 'CRT'),                                    -- 36
 
--- Vehicle options (attributes 7-12)
-(7, 'Maruti'), (7, 'Hyundai'), (7, 'Honda'), (7, 'Toyota'), (7, 'Tata'),
-(10, 'Petrol'), (10, 'Diesel'), (10, 'Electric'), (10, 'CNG'), (10, 'Hybrid'),
-(11, 'Manual'), (11, 'Automatic'),
-(12, 'White'), (12, 'Black'), (12, 'Red'), (12, 'Blue'), (12, 'Silver'),
+-- Vehicle attributes
+(9, 'Toyota'), (9, 'Honda'), (9, 'Ford'), (9, 'Tata'), (9, 'Hyundai'), (9, 'Maruthi'),
+(12, 'Petrol'), (12, 'Diesel'), (12, 'CNG'), (12, 'Electric'), (12, 'Hybrid'), (12, 'Other'),
+(13, 'Manual'), (13, 'Automatic'), (13, 'CVT'), (13, 'Tiptronic'), (13, 'Dual-Clutch'), (13, 'Semi-Auto'),
+(14, 'Black'), (14, 'White'), (14, 'Red'), (14, 'Blue'), (14, 'Silver'), (14, 'Grey'),                          -- 60
 
--- Furniture options (attributes 13-16)
-(13, 'Wood'), (13, 'Metal'), (13, 'Plastic'), (13, 'Leather'), (13, 'Fabric'),
-(14, 'Brown'), (14, 'Black'), (14, 'White'), (14, 'Grey'), (14, 'Beige'),
-(15, 'New'), (15, 'Used - Like New'), (15, 'Used - Good'), (15, 'Used - Fair'),
+-- Furniture attributes
+(15, 'Ikea'), (15, 'Urban Ladder'), (15, 'Godrej'), (15, 'Home Centre'), (15, 'Nilkamal'), (15, 'Pepperfry'),
+(16, 'Wood'), (16, 'Metal'), (16, 'Plastic'), (16, 'Glass'), (16, 'Leather'), (16, 'Fabric'),
+(17, 'Brown'), (17, 'Black'), (17, 'Beige'), (17, 'White'), (17, 'Grey'), (17, 'Cream'),
+(18, 'New'), (18, 'Like New'), (18, 'Used'), (18, 'Good'), (18, 'Fair'), (18, 'Old'),                           -- 84
 
--- Real Estate options (attributes 17-22)
-(17, '1 BHK'), (17, '2 BHK'), (17, '3 BHK'), (17, '4 BHK'), (17, '4+ BHK'),
-(19, 'Furnished'), (19, 'Semi-Furnished'), (19, 'Unfurnished'),
-(22, 'North'), (22, 'South'), (22, 'East'), (22, 'West'), (22, 'North-East'), (22, 'North-West'),
+-- Real Estate attributes
+(19, '1 BHK'), (19, '2 BHK'), (19, '3 BHK'), (19, '4 BHK'), (19, 'Studio'), (19, 'Duplex'),
+(21, 'Ground'), (21, '1st'), (21, '2nd'), (21, '3rd'), (21, 'Top'), (21, 'Basement'),
+(22, 'East'), (22, 'West'), (22, 'North'), (22, 'South'), (22, 'North-East'), (22, 'South-West'),               -- 102
 
--- Fashion options (attributes 23-26)
-(23, 'S'), (23, 'M'), (23, 'L'), (23, 'XL'), (23, 'XXL'),
-(24, 'Red'), (24, 'Blue'), (24, 'Black'), (24, 'White'), (24, 'Green'),
-(25, 'Cotton'), (25, 'Silk'), (25, 'Wool'), (25, 'Polyester'), (25, 'Denim'),
-(26, 'New'), (26, 'Used - Like New'), (26, 'Used - Good'),
+-- Fashion attributes
+(23, 'Nike'), (23, 'Zara'), (23, 'Levis'), (23, 'H&M'), (23, 'Gucci'), (23, 'Adidas'),
+(25, 'T-Shirt'), (25, 'Jeans'), (25, 'Jacket'), (25, 'Dress'), (25, 'Kurta'), (25, 'Shoes'),
+(26, 'Cotton'), (26, 'Silk'), (26, 'Wool'), (26, 'Polyester'), (26, 'Linen'), (26, 'Rayon'),                    --120
 
--- Books & Sports options (attributes 27-29)
-(28, 'New'), (28, 'Like New'), (28, 'Good'), (28, 'Fair'), (28, 'Poor');
+-- Books & Sports attributes
+(27, 'J.K. Rowling'), (27, 'Rick Riordan'), (27, 'Agatha Christie'), (27, 'Jane Austen'), (27, 'Mark Twain'), (27, 'Stephen King'),
+(28, 'Hyperion'), (28, 'HarperCollins'), (28, 'Random House'), (28, 'Simon & Schuster'), (28, 'Bloomsbury'), (28, 'Scholastic'),
+(29, 'Cricket'), (29, 'Football'), (29, 'Basketball'), (29, 'Tennis'), (29, 'Badminton'), (29, 'Hockey'),
+(30, 'Nike'), (30, 'Adidas'), (30, 'Puma'), (30, 'Yonex'), (30, 'Nivia'), (30, 'MRF');                         -- 144
 
--- Now assign attributes to categories and subcategories using the correct IDs
+
 -- Electronics (category_id = 1)
 INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
-(1, 1, true, 1),  -- Brand (required)
-(1, 2, true, 2),  -- Model (required)
-(1, 3, true, 3),  -- Electronics Condition (required)
-(1, 4, false, 4), -- RAM
-(1, 5, false, 5), -- Storage
-(1, 6, false, 6); -- Screen Size
+(1, 1, true, 1);  -- Brand (required)
+
+INSERT INTO Category_Attributes (subcategory_id, attribute_id, is_required, display_order) VALUES
 
 -- Mobiles (subcategory_id = 1)
-INSERT INTO Category_Attributes (subcategory_id, attribute_id, is_required, display_order) VALUES
-(1, 4, true, 1);  -- RAM (required for mobiles)
+(1, 2, true, 1),  
+(1, 3, true, 2),  
+-- Laptops (subcategory_id = 2)
+(2, 2, true, 1),  
+(2, 3, true, 2),  
+(2, 4, false, 3),  
+-- TV (subcategory_id = 3)
+(3, 7, true, 1),
+(3, 8, true, 2),
+-- Camera (subcategory_id = 4)
+(4, 5, true, 1),
+(4, 6, true, 2);
 
 -- Vehicles (category_id = 2)
 INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
-(2, 7, true, 1),   -- Make (required)
-(2, 8, true, 2),   -- Model Year (required)
-(2, 9, true, 3),   -- KM Driven (required)
-(2, 10, true, 4),  -- Fuel Type (required)
-(2, 11, false, 5), -- Transmission
-(2, 12, false, 6); -- Vehicle Color
+(2, 9, true, 1),   
+(2, 10, true, 2),   
+(2, 11, true, 3),   
+(2, 14, false, 6); 
 
--- Cars (subcategory_id = 6)
+-- Cars (subcategory_id = 5)
 INSERT INTO Category_Attributes (subcategory_id, attribute_id, is_required, display_order) VALUES
-(6, 11, true, 1);  -- Transmission (required for cars)
+(5, 12, true, 4),  
+(5, 13, false, 5);
 
 -- Furniture (category_id = 3)
 INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
-(3, 13, true, 1),  -- Material (required)
-(3, 14, false, 2), -- Furniture Color
-(3, 15, true, 3),  -- Furniture Condition (required)
-(3, 16, false, 4); -- Age
+(3, 15, true, 1),  
+(3, 16, true, 2), 
+(3, 17, false, 3),  
+(3, 18, false, 4);
 
 -- Real Estate (category_id = 4)
 INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
-(4, 17, true, 1),  -- BHK (required)
-(4, 18, true, 2),  -- Area (required)
-(4, 19, true, 3),  -- Furnishing (required)
-(4, 20, false, 4), -- Floor
-(4, 21, false, 5), -- Total Floors
-(4, 22, false, 6); -- Facing
-
--- Apartments (subcategory_id = 16)
-INSERT INTO Category_Attributes (subcategory_id, attribute_id, is_required, display_order) VALUES
-(16, 20, true, 1), -- Floor (required for apartments)
-(16, 21, true, 2); -- Total Floors (required for apartments)
+(4, 19, true, 1),  
+(4, 20, true, 2), 
+(4, 21, false, 3), 
+(4, 22, false, 4);
 
 -- Fashion (category_id = 5)
 INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
-(5, 23, true, 1),  -- Size (required)
-(5, 24, true, 2),  -- Fashion Color (required)
-(5, 25, false, 3), -- Fabric Material
-(5, 26, true, 4);  -- Fashion Condition (required)
+(5, 23, true, 1), 
+(5, 24, true, 2),  
+(5, 25, true, 3), 
+(5, 26, true, 4); 
 
 -- Books & Sports (category_id = 6)
-INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
-(6, 27, false, 1), -- Author/Brand
-(6, 28, true, 2),  -- Book Condition (required)
-(6, 29, false, 3); -- Edition/Model
+INSERT INTO Category_Attributes (subcategory_id, attribute_id, is_required, display_order) VALUES
+(16, 27, true, 1), 
+(16, 28, true, 1), 
+(17, 29, true, 2), 
+(17, 30, true, 2);
 
 -- Skip 'user_id' column to allow auto-increment
 INSERT INTO users (username, email, password_hash, phone_number) VALUES
@@ -193,11 +195,11 @@ INSERT INTO users (username, email, password_hash, phone_number) VALUES
 ('JOHN_FURNITURES', 'johnfurnitures@gmail.com', '$2b$10$kaQwCA04C3X3svcdhQDwbOic14u9vDC/HQX.tVOsKWq8kGePZ8Ka2', NULL);
 
 INSERT INTO listings (name, category_id, subcategory_id, user_id, price, description) VALUES 
-('MARUTHI SUZUKI ALTO 700', 2, 6, 1, 300000.00, 'Distance - 20000km\nManufactured date - 24/05/2020\nColour - Grey'),
-('MRF Champ Kashmir Willow Cricket Bat', 6, 24, 3, 1890.00, 'Size - 5\nColour - Multi colour\nMaterial - Willow-wood'),
-('TATA NEXON', 2, 6, 1, 900000.00, 'Distance - 10000km\nManufactured date - 23/01/2022\nColour - White'),
-('PERCY JACKSON AND THE LIGHTNING THIEF', 6, 22, 2, 200.00, 'Printed on - 22/07/2020\nCondition - Readable\nNo Scribles and No torn pages'),
-('ASUS TUF GAMING LAPTOP F5061ACB', 1, 2, 5, 30000.00, 'Processor - Ryzen 7000\nCores - 8\nUsed for - 2yrs\nDisplay - OLED'),
+('MARUTHI SUZUKI ALTO 700', 2, 5, 1, 300000.00, ' Good Condition, No accidents yet, Servicing done every 3 months'),
+('MRF Champ Kashmir Willow Cricket Bat', 6, 17, 3, 1890.00, 'I am not playing cricket anymore, so I might as well give to someone'),
+('TATA NEXON', 2, 5, 1, 900000.00, 'Leather seats, New tires and in good condition'),
+('PERCY JACKSON AND THE LIGHTNING THIEF', 6, 16, 2, 200.00, 'I accidentally received 2 copies, so looking for someone to buy and enter a new Fantacy world'),
+('ASUS TUF GAMING LAPTOP F5061ACB', 1, 2, 5, 30000.00, 'Using for 2 years, Only for coding, I got a new laptop'),
 ('2BHK FLAT with Sea View IN VIZAG', 4, 15, 6, 2500000.00,'Very good location, near to super market, hospital. Friendly neighbours and great sea view');
 
 INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES
@@ -210,48 +212,39 @@ INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES
 
 -- Insert all listing attributes in one batch
 INSERT INTO Listing_Attributes 
-(listing_id, attribute_id, text_value, number_value, boolean_value, option_id) VALUES
+(listing_id, attribute_id, number_value, option_id) VALUES
 -- MARUTHI SUZUKI ALTO 700 (listing_id = 1)
-(1, 7, NULL, NULL, NULL, 31),   -- Make: Maruti
-(1, 8, NULL, 2020, NULL, NULL),  -- Model Year: 2020
-(1, 9, NULL, 20000, NULL, NULL), -- KM Driven: 20000
-(1, 10, NULL, NULL, NULL, 40),   -- Fuel Type: Petrol
-(1, 11, NULL, NULL, NULL, 42),    -- Transmission: Manual
-(1, 12, 'Grey', NULL, NULL, NULL),-- Color: Grey
+(1, 9, NULL, 42 ),
+(1, 10, NULL, 43),   
+(1, 11, 20000, NULL),   
+(1, 12, NULL, 49),
 
 -- MRF Champ Kashmir Willow Cricket Bat (listing_id = 2)
-(2, 27, 'MRF', NULL, NULL, NULL), -- Brand: MRF
-(2, 28, NULL, NULL, NULL, 78),    -- Condition: New
-(2, 29, 'Champ Kashmir Willow', NULL, NULL, NULL), -- Model
+(2, 29, NULL,133),   
+(2, 30, NULL,144 ), 
 
 -- TATA NEXON (listing_id = 3)
-(3, 7, NULL, NULL, NULL, 35),     -- Make: Tata
-(3, 8, NULL, 2022, NULL, NULL),   -- Model Year: 2022
-(3, 9, NULL, 10000, NULL, NULL),  -- KM Driven: 10000
-(3, 10, NULL, NULL, NULL, 41),    -- Fuel Type: Diesel
-(3, 11, NULL, NULL, NULL, 43),    -- Transmission: Automatic
-(3, 12, NULL, NULL, NULL, 47),    -- Color: White
+(3, 9, NULL,40 ), 
+(3, 10, NULL, 43),  
+(3, 11, 20000, NULL),  
+(3, 12, NULL, 49),
+(3, 13, NULL, 56), 
 
 -- PERCY JACKSON BOOK (listing_id = 4)
-(4, 27, 'Rick Riordan', NULL, NULL, NULL), -- Author
-(4, 28, 'Readable', NULL, NULL, NULL),     -- Condition
-(4, 29, 'First', NULL, NULL, NULL),        -- Edition
+(4, 27,NULL, 122), 
+(4, 28,NULL, 127 ),
 
 -- ASUS LAPTOP (listing_id = 5)
-(5, 1, NULL, NULL, NULL, 2),       -- Brand: ASUS
-(5, 2, 'TUF GAMING F5061ACB', NULL, NULL, NULL), -- Model
-(5, 3, NULL, NULL, NULL, 8),       -- Condition: Good
-(5, 4, '16GB', NULL, NULL, NULL),  -- RAM
-(5, 5, '512GB SSD', NULL, NULL, NULL), -- Storage
-(5, 6, NULL, 15.6, NULL, NULL),    -- Screen Size
+(5, 1, NULL, 4),
+(5, 2, NULL, 11),
+(5, 3, NULL, 17),
+(5, 4, NULL, 23),
 
 -- REAL ESTATE LISTING (listing_id = 6)
-(6, 17, NULL, NULL, NULL, 43),     -- BHK: 1 BHK
-(6, 18, NULL, 700.00, NULL, NULL), -- Area: 700 sqft
-(6, 19, NULL, NULL, NULL, 47),     -- Furnishing: Semi-Furnished
-(6, 20, NULL, 1.00, NULL, NULL),   -- Floor: 1
-(6, 21, NULL, 2.00, NULL, NULL),   -- Total Floors: 2
-(6, 22, NULL, NULL, NULL, 54);     -- Facing: North
+(6, 19, NULL, 86),
+(6, 20, 700 , NULL),
+(6, 22, NULL, 99);
+
 
 -- Insert a conversation (RK_BOOK_STORE is the buyer, TATA_MOTORS is the seller)
 INSERT INTO Conversations (buyer_id, seller_id, listing_id)

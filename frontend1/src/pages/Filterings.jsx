@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams,useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { apiUrl } from "../config/config";
+import FilterBar from "../components/Filterbar";
 import "../css/filtering.css";
 
 const Filterings = () => {
@@ -116,10 +117,18 @@ const Filterings = () => {
     return (
       <>
         <Navbar />
-        <div className="not-found">
+        <div className="filterings-container">
+    <div className="filterings-content">
+      <div className="filter-sidebar">
+        <FilterBar categoryId={category_id} 
+        subcategoryId={subcategory_id} />
+      </div>
+        <div className="listings-section">
           <h2>No Listings Found</h2>
           <p>No products found in this category.</p>
         </div>
+      </div>
+      </div>
       </>
     );
   }
@@ -127,7 +136,13 @@ const Filterings = () => {
   return (
     <>
       <Navbar />
-      <div className="category-container">
+      <div className="filterings-container">
+    <div className="filterings-content">
+      <div className="filter-sidebar">
+        <FilterBar categoryId={category_id} 
+        subcategoryId={subcategory_id} />
+      </div>
+      <div className="listings-section">
         <h1 className="title">Products in {FilteringName}</h1>
         <div className="listings-grid">
           {listings.map((listing) => (
@@ -161,19 +176,26 @@ const Filterings = () => {
                     {formatPrice(listing.price)}
                   </span>
                 </div>
-                <div className="description">
-                  <p>
-                    {listing.description?.substring(0, 100) ||
-                      "No description provided."}
-                    ...
-                  </p>
+                <div className="listing-attributes">
+                  {listing.attributes && listing.attributes.length > 0 ? (
+                    listing.attributes.map((attr, index) => (
+                      <div key={index} className="attribute-line">
+                        <strong>{attr.name}: </strong>
+                        <span>{attr.value}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-attributes">No attributes available.</p>
+                  )}
                 </div>
-                <button className="view-details-button">View Details</button>
+                {/* <button className="view-details-button">View Details</button> */}
               </div>
             </div>
           ))}
         </div>
       </div>
+      </div>
+    </div>
     </>
   );
 };

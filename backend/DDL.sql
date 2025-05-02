@@ -44,11 +44,14 @@ CREATE TABLE Listings (
     FOREIGN KEY (subcategory_id) REFERENCES Subcategories(subcategory_id) ON DELETE CASCADE
 );
 
+
+-- only keep attributes for number and enum and add location
+
 -- Table for defining filterable attributes
 CREATE TABLE Attributes (
     attribute_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    data_type VARCHAR(20) NOT NULL CHECK (data_type IN ('text', 'number', 'boolean', 'enum'))
+    data_type VARCHAR(20) NOT NULL CHECK (data_type IN ('number', 'enum'))
 );
 
 -- Table for predefined options (for enum type attributes)
@@ -79,18 +82,13 @@ CREATE TABLE Listing_Attributes (
     listing_attribute_id SERIAL PRIMARY KEY,
     listing_id INT NOT NULL,
     attribute_id INT NOT NULL,
-    text_value TEXT,
     number_value DECIMAL(20, 2),
-    boolean_value BOOLEAN,
     option_id INT,
     FOREIGN KEY (listing_id) REFERENCES Listings(listing_id) ON DELETE CASCADE,
     FOREIGN KEY (attribute_id) REFERENCES Attributes(attribute_id) ON DELETE CASCADE,
     FOREIGN KEY (option_id) REFERENCES Attribute_Options(option_id) ON DELETE CASCADE,
     CHECK (
-        (text_value IS NOT NULL AND number_value IS NULL AND boolean_value IS NULL AND option_id IS NULL) OR
-        (text_value IS NULL AND number_value IS NOT NULL AND boolean_value IS NULL AND option_id IS NULL) OR
-        (text_value IS NULL AND number_value IS NULL AND boolean_value IS NOT NULL AND option_id IS NULL) OR
-        (text_value IS NULL AND number_value IS NULL AND boolean_value IS NULL AND option_id IS NOT NULL)
+        (number_value is NULL) OR (option_id is NULL)
     )
 );
 

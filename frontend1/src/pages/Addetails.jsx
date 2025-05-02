@@ -107,9 +107,7 @@ const Addetails = () => {
   };
 
   const renderAttributeValue = (attr) => {
-    if (attr.text_value) return attr.text_value;
     if (attr.number_value) return attr.number_value;
-    if (attr.boolean_value !== null) return attr.boolean_value ? 'Yes' : 'No';
     if (attr.option_value) return attr.option_value;
     return 'N/A';
   };

@@ -24,6 +24,7 @@ app.use('/images', express.static(path.join(__dirname, '..\\images')));
 
 // CORS: Give permission to localhost:3000 (ie our React app)
 // to use this backend API
+
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -41,9 +42,8 @@ app.use(
   })
 );
 
-/////////////////////////////////////////////////////////////
-// Authentication APIs
-// Signup, Login, IsLoggedIn and Logout
+////////////////////////////////////////////////////
+// Login, Signup and Authentication
 
 function isAuthenticated(req, res, next) {
   if (!req.session.userId) {
@@ -145,6 +145,9 @@ app.post("/logout", (req, res) => {
   });
 });
 
+
+////////////////////////////////////////////////////
+// Filterbar, Navbar - Names, Attributes of Category and Subcategory
 
 app.get('/categories-with-subcategories', async (req, res) => {
   try {
@@ -314,28 +317,51 @@ app.get('/subcategories/:id/attributes', async (req, res) => {
   }
 });
 
-// GET /listings-with-images - Get all listings with their primary image
+
+////////////////////////////////////////////////////
+// Dash-board and Sell - Listings/Ads  
+
 app.get('/listings-with-images', async (req, res) => {
   try {
     const result = await pool.query(`
+      WITH ranked_attributes AS (
+        SELECT 
+          la.listing_id,
+          a.name AS attribute_name,
+          CASE 
+            WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
+            WHEN o.value IS NOT NULL THEN o.value
+            ELSE NULL
+          END AS value,
+          ROW_NUMBER() OVER (PARTITION BY la.listing_id ORDER BY la.listing_attribute_id) AS rn
+        FROM listing_attributes la
+        JOIN attributes a ON la.attribute_id = a.attribute_id
+        LEFT JOIN attribute_options o ON la.option_id = o.option_id
+      ),
+      top3_attributes AS (
+        SELECT listing_id, attribute_name, value
+        FROM ranked_attributes
+        WHERE rn <= 3
+      )
+    
       SELECT 
-        l.listing_id,
-        l.name,
-        l.description,
-        c.name AS category_name,
-        s.name AS subcategory_name,
-        l.price,
-        li.image_url
+        l.*,
+        li.image_url,
+        COALESCE(json_agg(jsonb_build_object(
+          'name', t.attribute_name,
+          'value', t.value
+        )) FILTER (WHERE t.attribute_name IS NOT NULL), '[]') AS attributes
       FROM listings l
-      JOIN categories c ON l.category_id = c.category_id
-      JOIN subcategories s ON l.subcategory_id = s.subcategory_id
       LEFT JOIN (
         SELECT 
           listing_id, 
           image_url,
-          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) as rn
+          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
         FROM listing_images
       ) li ON l.listing_id = li.listing_id AND li.rn = 1
+      LEFT JOIN top3_attributes t ON l.listing_id = t.listing_id
+      GROUP BY l.listing_id, li.image_url
+      ORDER BY l.listing_id
     `);
     
     // Group images with their listings
@@ -425,19 +451,12 @@ app.post('/listings', async (req, res) => {
                 column = 'number_value';
                 normalizedValue = parseFloat(value);
             } 
-            else if (attr.data_type === 'boolean') {
-                column = 'boolean_value';
-                normalizedValue = Boolean(value);
-            }
             else if (attr.data_type === 'enum') {
                 column = 'option_id';
                 // Get option_id for the selected value
                 const optionQuery = 'SELECT option_id FROM attribute_options WHERE attribute_id = $1 AND value = $2';
                 const { rows: [option] } = await pool.query(optionQuery, [attributeId, value]);
                 normalizedValue = option?.option_id;
-            }
-            else {
-                column = 'text_value';
             }
             
             if (normalizedValue !== null && normalizedValue !== undefined) {
@@ -459,6 +478,9 @@ app.post('/listings', async (req, res) => {
     }
 });
 
+
+////////////////////////////////////////////////////
+// Complete details of an Ad/listing
 
 app.post("/ad-details", async (req, res) => {
   const { listing_id } = req.body;
@@ -489,9 +511,7 @@ app.post("/ad-details", async (req, res) => {
         a.attribute_id,
         a.name AS attribute_name,
         a.data_type,
-        la.text_value,
         la.number_value,
-        la.boolean_value,
         ao.value AS option_value
       FROM listing_attributes la
       JOIN attributes a ON la.attribute_id = a.attribute_id
@@ -522,6 +542,10 @@ app.post("/ad-details", async (req, res) => {
     res.status(500).json({ message: "Error fetching product details" });
   }
 });
+
+
+////////////////////////////////////////////////////
+// Filterings - Filter on cateogry and subcategory
 
 app.post("/category_name", async (req, res) => {
   console.log("Request for category name");
@@ -574,21 +598,46 @@ app.post("/subcategory_name", async (req, res) => {
 app.post("/products_by_subcategory", async (req, res) => {
   const { category_id, subcategory_id } = req.body;
   try {
-    const result = await pool.query(
-      `SELECT 
+    const result = await pool.query(`
+      WITH ranked_attributes AS (
+        SELECT 
+          la.listing_id,
+          a.name AS attribute_name,
+          CASE 
+            WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
+            WHEN o.value IS NOT NULL THEN o.value
+            ELSE NULL
+          END AS value,
+          ROW_NUMBER() OVER (PARTITION BY la.listing_id ORDER BY la.listing_attribute_id) AS rn
+        FROM listing_attributes la
+        JOIN attributes a ON la.attribute_id = a.attribute_id
+        LEFT JOIN attribute_options o ON la.option_id = o.option_id
+      ),
+      top3_attributes AS (
+        SELECT listing_id, attribute_name, value
+        FROM ranked_attributes
+        WHERE rn <= 3
+      )
+    
+      SELECT 
         l.*,
-        li.image_url
+        li.image_url,
+        COALESCE(json_agg(jsonb_build_object(
+          'name', t.attribute_name,
+          'value', t.value
+        )) FILTER (WHERE t.attribute_name IS NOT NULL), '[]') AS attributes
       FROM listings l
       LEFT JOIN (
         SELECT 
           listing_id, 
           image_url,
-          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) as rn
+          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
         FROM listing_images
       ) li ON l.listing_id = li.listing_id AND li.rn = 1
-      WHERE l.category_id = $1 AND subcategory_id = $2`,
-      [category_id, subcategory_id]
-    );
+      LEFT JOIN top3_attributes t ON l.listing_id = t.listing_id
+      WHERE l.category_id = $1 AND l.subcategory_id = $2
+      GROUP BY l.listing_id, li.image_url
+    `, [category_id, subcategory_id]);
 
       // Group images with their listings
       const listingsWithImages = result.rows.map(row => ({
@@ -608,21 +657,48 @@ app.post("/products_by_category", async (req, res) => {
   const { category_id } = req.body;
   
   try {
-    // console.log("Category ID:", category_id); // Debugging line
+
     const result = await pool.query(`
+      WITH ranked_attributes AS (
+        SELECT 
+          la.listing_id,
+          a.name AS attribute_name,
+          CASE 
+            WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
+            WHEN o.value IS NOT NULL THEN o.value
+            ELSE NULL
+          END AS value,
+          ROW_NUMBER() OVER (PARTITION BY la.listing_id ORDER BY la.listing_attribute_id) AS rn
+        FROM listing_attributes la
+        JOIN attributes a ON la.attribute_id = a.attribute_id
+        LEFT JOIN attribute_options o ON la.option_id = o.option_id
+      ),
+      top3_attributes AS (
+        SELECT listing_id, attribute_name, value
+        FROM ranked_attributes
+        WHERE rn <= 3
+      )
+    
       SELECT 
         l.*,
-        li.image_url
+        li.image_url,
+        COALESCE(json_agg(jsonb_build_object(
+          'name', t.attribute_name,
+          'value', t.value
+        )) FILTER (WHERE t.attribute_name IS NOT NULL), '[]') AS attributes
       FROM listings l
       LEFT JOIN (
         SELECT 
           listing_id, 
           image_url,
-          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) as rn
+          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
         FROM listing_images
       ) li ON l.listing_id = li.listing_id AND li.rn = 1
+      LEFT JOIN top3_attributes t ON l.listing_id = t.listing_id
       WHERE l.category_id = $1
+      GROUP BY l.listing_id, li.image_url
     `, [category_id]);
+    
     
     // Group images with their listings
     const listingsWithImages = result.rows.map(row => ({
@@ -652,8 +728,7 @@ app.post("/products_by_category", async (req, res) => {
 
 
 ////////////////////////////////////////////////////
-// conversations and chats
-// Create or get an existing conversation   - Charan singh
+// Contact Seller - Messages and Conversations
 
 app.post("/conversations", async (req, res) => {
   const { buyer_id, seller_id, listing_id } = req.body;

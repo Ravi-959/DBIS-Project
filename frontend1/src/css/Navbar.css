@@ -2,10 +2,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #f3f3f3;
+  background-color: #1f1f1f;
   padding: 10px 30px;
-  border-bottom: 1px solid #ddd;
-  font-family: Arial, sans-serif;
+  border-bottom: 1px solid #333;
+  font-family: 'Segoe UI', sans-serif;
+  color: #eaeaea;
 }
 
 .navbar-left,
@@ -17,47 +18,25 @@
 }
 
 .logo {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
-  color: #002f34;
+  color: #ffce32;
   cursor: pointer;
-}
-
-.location-container {
-  display: flex;
-  align-items: center;
-  border: 1px solid #002f34;
-  border-radius: 6px;
-  padding: 6px 10px;
-  background-color: #fff;
-  gap: 8px;
-}
-
-.location-dropdown {
-  border: none;
-  font-size: 14px;
-  outline: none;
-  background: transparent;
-  color: #002f34;
-}
-
-.search-icon,
-.dropdown-icon {
-  color: #002f34;
-  font-size: 14px;
 }
 
 .main-search {
   width: 500px;
   padding: 10px 14px;
   font-size: 14px;
-  border: 1px solid #002f34;
+  border: none;
   border-radius: 6px 0 0 6px;
   outline: none;
+  background-color: #2c2c2c;
+  color: #fff;
 }
 
 .main-search-btn {
-  background-color: #002f34;
+  background-color: #3a77ff;
   color: white;
   padding: 10px 14px;
   border: none;
@@ -65,26 +44,17 @@
   cursor: pointer;
 }
 
-.lang-select {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  color: #002f34;
-  cursor: pointer;
-  gap: 4px;
-}
-
 .icon {
   font-size: 18px;
-  color: #002f34;
+  color: #eaeaea;
   cursor: pointer;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
-  background-color: purple;
-  color: white;
+  background-color: #ff8c00;
+  color: #fff;
   font-weight: bold;
   border-radius: 50%;
   display: flex;
@@ -108,57 +78,57 @@
   background-color: transparent;
   border: none;
   font-size: 14px;
-  color: #002f34;
+  color: #eaeaea;
   cursor: pointer;
   margin-left: 10px;
 }
 
-/* Add these styles to your existing CSS */
-
-/* Rotating chevron icon */
-.dropdown-icon {
-  transition: transform 0.2s ease;
-  margin-left: 5px;
-}
-
-.dropdown-icon.rotate {
-  transform: rotate(180deg);
-}
-
-/* Existing styles remain the same */
+/* Dropdown styling */
 .categories-dropdown-container {
   position: relative;
   margin-right: 15px;
 }
 
 .categories-dropdown-btn {
-  background: #f5f5f5;
+  background: #2c2c2c;
   border: none;
   padding: 10px 15px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   font-weight: bold;
   text-transform: uppercase;
   font-size: 14px;
+  color: #ffce32;
 }
 
 .categories-dropdown-btn:hover {
-  background: #e0e0e0;
+  background: #3b3b3b;
+}
+
+.dropdown-icon {
+  transition: transform 0.2s ease;
+  margin-left: 5px;
+  color: #ffce32;
+}
+
+.dropdown-icon.rotate {
+  transform: rotate(180deg);
 }
 
 .categories-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
-  background: white;
-  width: 800px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  background: #2b2b2b;
+  width: 900px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   z-index: 1000;
-  padding: 15px;
+  padding: 20px;
+  color: #eaeaea;
 }
 
 .dropdown-header {
@@ -166,52 +136,52 @@
   text-transform: uppercase;
   margin-bottom: 15px;
   font-size: 16px;
+  border-bottom: 1px solid #444;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
 }
 
 .categories-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px 30px;
-  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  flex-wrap: wrap;
 }
 
 .category-group {
-  break-inside: avoid;
-}
-
-.category-item, .subcategory-item {
-  padding: 4px 0;
-  cursor: pointer;
-  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
 }
 
 .category-item {
   font-weight: bold;
-  margin-top: 8px;
-}
-
-.category-item:first-child {
-  margin-top: 0;
-}
-
-.category-item:hover, .subcategory-item:hover {
-  color: #002f34;
-  text-decoration: underline;
+  margin-bottom: 6px;
+  color: #ffce32;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
 .subcategory-item {
-  padding-left: 10px;
+  padding-left: 12px;
+  font-size: 14px;
+  color: #ccc;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.category-item:hover,
+.subcategory-item:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .auth-btn {
   background-color: transparent;
-  border: 1px solid #002f34;
+  border: 1px solid #ffce32;
   padding: 8px 16px;
   border-radius: 4px;
   font-size: 14px;
-  color: #002f34;
+  color: #ffce32;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   font-weight: bold;
@@ -219,6 +189,6 @@
 }
 
 .auth-btn:hover {
-  background-color: #002f34;
-  color: white;
+  background-color: #ffce32;
+  color: #1f1f1f;
 }

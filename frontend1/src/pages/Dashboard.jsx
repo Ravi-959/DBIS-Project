@@ -83,12 +83,18 @@ const Dashboard = () => {
                   <div className="listing-details">
                     <div className="listing-price">₹{formatPrice(listing.price)}</div>
                     <div className="listing-title">{listing.name}</div>
-                    <div className="listing-description">
-                      {listing.description.length > 50 
-                        ? `${listing.description.substring(0, 50)}...` 
-                        : listing.description}
+                    <div className="listing-attributes">
+                      {listing.attributes && listing.attributes.length > 0 ? (
+                        listing.attributes.map((attr, index) => (
+                          <div key={index} className="attribute-line">
+                            <strong>{attr.name}: </strong>
+                            <span>{attr.value}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="no-attributes">No attributes available.</p>
+                      )}
                     </div>
-                    <div className="listing-location">MUMBAI</div>
                   </div>
                 </div>
               ))}

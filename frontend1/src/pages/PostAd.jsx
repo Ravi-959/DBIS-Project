@@ -132,19 +132,6 @@ const SellDetails = () => {
           />
         );
       
-      case 'boolean':
-        return (
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              name={fieldName}
-              checked={formData[fieldName] || false}
-              onChange={handleChange}
-            />
-            <span className="checkbox-custom"></span>
-          </label>
-        );
-      
       case 'enum':
         return (
           <select

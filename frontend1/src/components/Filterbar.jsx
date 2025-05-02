@@ -1,251 +1,156 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiUrl } from "../config/config";
 import "../css/filterbar.css";
 
-const FilterBar = () => {
-  const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [categoryAttributes, setCategoryAttributes] = useState([]);
-  const [filters, setFilters] = useState({});
-  const location = useLocation();
-  const navigate = useNavigate();
+const MAX_VISIBLE_ENUM_OPTIONS = 6;
 
-  // Fetch categories on component mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get('/api/categories');
-        setCategories(response.data);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
+const FilterBar = ({ categoryId, subcategoryId }) => {
+  const [attributes, setAttributes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterValues, setFilterValues] = useState({});
+  const [expandedEnums, setExpandedEnums] = useState({});
 
-  // Fetch subcategories when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      const fetchSubcategories = async () => {
-        try {
-          const response = await axios.get(`/api/categories/${selectedCategory}/subcategories`);
-          setSubcategories(response.data);
-        } catch (error) {
-          console.error('Error fetching subcategories:', error);
-        }
-      };
-      fetchSubcategories();
-    }
-  }, [selectedCategory]);
+  const fetchAttributes = useCallback(async () => {
+    if (!categoryId) return;
 
-  // Fetch category attributes when category/subcategory changes
-  useEffect(() => {
-    const fetchAttributes = async () => {
-      if (selectedCategory || selectedSubcategory) {
-        try {
-          const endpoint = selectedSubcategory 
-            ? `/api/subcategories/${selectedSubcategory}/attributes`
-            : `/api/categories/${selectedCategory}/attributes`;
-          
-          const response = await axios.get(endpoint);
-          setCategoryAttributes(response.data);
-          
-          // Initialize empty filters for each attribute
-          const initialFilters = {};
-          response.data.forEach(attr => {
-            initialFilters[attr.name] = attr.data_type === 'number' 
-              ? { min: '', max: '' } 
-              : '';
-          });
-          setFilters(initialFilters);
-        } catch (error) {
-          console.error('Error fetching attributes:', error);
-        }
-      }
-    };
-    fetchAttributes();
-  }, [selectedCategory, selectedSubcategory]);
+    try {
+      setLoading(true);
+      const endpoint = subcategoryId
+        ? `${apiUrl}/subcategories/${subcategoryId}/attributes`
+        : `${apiUrl}/categories/${categoryId}/attributes`;
 
-  // Apply filters to URL
-  const applyFilters = () => {
-    const queryParams = new URLSearchParams();
-    
-    if (selectedCategory) queryParams.append('category', selectedCategory);
-    if (selectedSubcategory) queryParams.append('subcategory', selectedSubcategory);
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        if (typeof value === 'object') {
-          if (value.min) queryParams.append(`${key}_min`, value.min);
-          if (value.max) queryParams.append(`${key}_max`, value.max);
-        } else {
-          queryParams.append(key, value);
-        }
-      }
-    });
-    
-    navigate(`${location.pathname}?${queryParams.toString()}`);
-  };
+      const response = await fetch(endpoint);
+      if (response.ok) {
+        const data = await response.json();
+        setAttributes(data);
 
-  // Reset all filters
-  const resetFilters = () => {
-    setSelectedCategory(null);
-    setSelectedSubcategory(null);
-    setFilters({});
-    navigate(location.pathname);
-  };
-
-  // Handle filter input changes
-  const handleFilterChange = (attrName, value) => {
-    setFilters(prev => {
-      const attribute = categoryAttributes.find(a => a.name === attrName);
-      
-      if (attribute.data_type === 'number') {
-        return {
-          ...prev,
-          [attrName]: {
-            ...prev[attrName],
-            ...value
+        const initialFilters = {};
+        data.forEach(attr => {
+          if (attr.data_type === 'number') {
+            initialFilters[`attr_${attr.attribute_id}_min`] = 1;
+            initialFilters[`attr_${attr.attribute_id}_max`] = attr.max_value || 1000;
+          } else if (attr.data_type === 'enum') {
+            initialFilters[`attr_${attr.attribute_id}`] = [];
+          } else {
+            initialFilters[`attr_${attr.attribute_id}`] = '';
           }
-        };
+        });
+
+        setFilterValues(initialFilters);
+      } else {
+        throw new Error("Failed to fetch attributes");
       }
-      return { ...prev, [attrName]: value };
+    } catch (error) {
+      console.error('Error fetching attributes:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId, subcategoryId]);
+
+  useEffect(() => {
+    fetchAttributes();
+  }, [fetchAttributes]);
+
+  const toggleEnumValue = (attrId, value) => {
+    setFilterValues(prev => {
+      const key = `attr_${attrId}`;
+      const currentValues = prev[key] || [];
+      const updatedValues = currentValues.includes(value)
+        ? currentValues.filter(v => v !== value)
+        : [...currentValues, value];
+      return {
+        ...prev,
+        [key]: updatedValues
+      };
     });
   };
 
-  // Render appropriate input based on attribute type
-  const renderFilterInput = (attribute) => {
-    switch (attribute.data_type) {
-      case 'number':
-        return (
-          <div className="filter-number-range">
-            <input
-              type="number"
-              placeholder="Min"
-              value={filters[attribute.name]?.min || ''}
-              onChange={(e) => handleFilterChange(
-                attribute.name, 
-                { min: e.target.value }
-              )}
-            />
-            <span>to</span>
-            <input
-              type="number"
-              placeholder="Max"
-              value={filters[attribute.name]?.max || ''}
-              onChange={(e) => handleFilterChange(
-                attribute.name, 
-                { max: e.target.value }
-              )}
-            />
-          </div>
-        );
-      
-      case 'enum':
-        return (
-          <select
-            value={filters[attribute.name] || ''}
-            onChange={(e) => handleFilterChange(attribute.name, e.target.value)}
-          >
-            <option value="">Any {attribute.name}</option>
-            {attribute.options.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        );
-      
-      case 'boolean':
-        return (
-          <div className="filter-boolean">
-            <label>
-              <input
-                type="checkbox"
-                checked={filters[attribute.name] || false}
-                onChange={(e) => handleFilterChange(attribute.name, e.target.checked)}
-              />
-              Yes
-            </label>
-          </div>
-        );
-      
-      default:
-        return (
-          <input
-            type="text"
-            value={filters[attribute.name] || ''}
-            onChange={(e) => handleFilterChange(attribute.name, e.target.value)}
-            placeholder={`Enter ${attribute.name}`}
-          />
-        );
-    }
+  const toggleSeeMore = (attrId) => {
+    setExpandedEnums(prev => ({
+      ...prev,
+      [attrId]: !prev[attrId]
+    }));
   };
+
+  if (loading) return <div className="filter-loading">Loading filters...</div>;
 
   return (
     <div className="filter-bar">
-      <h3>Filters</h3>
-      
-      {/* Category selection */}
-      <div className="filter-group">
-        <label>Category</label>
-        <select
-          value={selectedCategory || ''}
-          onChange={(e) => {
-            setSelectedCategory(e.target.value || null);
-            setSelectedSubcategory(null);
-          }}
-        >
-          <option value="">All Categories</option>
-          {categories.map(category => (
-            <option key={category.category_id} value={category.category_id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      {/* Subcategory selection (if category is selected) */}
-      {selectedCategory && subcategories.length > 0 && (
-        <div className="filter-group">
-          <label>Subcategory</label>
-          <select
-            value={selectedSubcategory || ''}
-            onChange={(e) => setSelectedSubcategory(e.target.value || null)}
-          >
-            <option value="">All Subcategories</option>
-            {subcategories.map(subcategory => (
-              <option key={subcategory.subcategory_id} value={subcategory.subcategory_id}>
-                {subcategory.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      
-      {/* Dynamic category-specific filters */}
-      {categoryAttributes.length > 0 && (
-        <div className="category-filters">
-          <h4>Additional Filters</h4>
-          {categoryAttributes.map(attribute => (
-            <div key={attribute.attribute_id} className="filter-group">
-              <label>{attribute.name}</label>
-              {renderFilterInput(attribute)}
+      <h3 className="filter-header">Filters</h3>
+
+      {attributes.length === 0 ? (
+        <p className="no-filters">No filters available</p>
+      ) : (
+        <div className="filter-groups">
+          {attributes.map(attr => (
+            <div key={attr.attribute_id} className="filter-group">
+              <label className="filter-label">
+                {attr.name}
+                {attr.is_required && <span className="required-star">*</span>}
+              </label>
+
+              {attr.data_type === 'number' && (
+                <div className="dual-range-slider">
+                  <div className="range-values">
+                    <span>Min: {filterValues[`attr_${attr.attribute_id}_min`]}</span>
+                    <span>Max: {filterValues[`attr_${attr.attribute_id}_max`]}</span>
+                  </div>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      min="1"
+                      max={attr.max_value || 1000}
+                      value={filterValues[`attr_${attr.attribute_id}_min`]}
+                      onChange={(e) => {
+                        const min = Math.min(parseInt(e.target.value), filterValues[`attr_${attr.attribute_id}_max`]);
+                        setFilterValues(prev => ({
+                          ...prev,
+                          [`attr_${attr.attribute_id}_min`]: min
+                        }));
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min="1"
+                      max={attr.max_value || 1000}
+                      value={filterValues[`attr_${attr.attribute_id}_max`]}
+                      onChange={(e) => {
+                        const max = Math.max(parseInt(e.target.value), filterValues[`attr_${attr.attribute_id}_min`]);
+                        setFilterValues(prev => ({
+                          ...prev,
+                          [`attr_${attr.attribute_id}_max`]: max
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {attr.data_type === 'enum' && attr.options && (
+                <div className="enum-boxes">
+                  {(expandedEnums[attr.attribute_id] ? attr.options : attr.options.slice(0, MAX_VISIBLE_ENUM_OPTIONS)).map(option => (
+                    <div
+                      key={option}
+                      className={`enum-box ${filterValues[`attr_${attr.attribute_id}`].includes(option) ? 'selected' : ''}`}
+                      onClick={() => toggleEnumValue(attr.attribute_id, option)}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                  {attr.options.length > MAX_VISIBLE_ENUM_OPTIONS && (
+                    <button
+                      className="see-more-btn"
+                      onClick={() => toggleSeeMore(attr.attribute_id)}
+                    >
+                      {expandedEnums[attr.attribute_id] ? 'See less' : 'See more'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
-      
-      {/* Action buttons */}
-      <div className="filter-actions">
-        <button onClick={applyFilters} className="apply-btn">
-          Apply Filters
-        </button>
-        <button onClick={resetFilters} className="reset-btn">
-          Reset All
-        </button>
-      </div>
     </div>
   );
 };

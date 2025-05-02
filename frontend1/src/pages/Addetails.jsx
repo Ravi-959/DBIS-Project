@@ -50,61 +50,110 @@ const Addetails = () => {
   };
 
     
-  const handleContactSeller = async () => {
+  // const handleContactSeller = async () => {
 
+  //   if (!userId) {
+  //     alert("You must be logged in to contact the seller.");
+  //     navigate("/login");
+  //     return;
+  //   }
+  
+  //   if (!listingData) {
+  //     alert("Listing is missing.");
+  //     console.error("Listing is missing");
+  //     return;
+  //   }
+    
+  //   const {product, attributes } = listingData;
+
+  //   // Ensure the seller_id is available
+  //   if (!product?.user_id) {
+  //     alert("Seller information is missing.");
+  //     console.error("Seller ID is missing:", product);
+  //     return;
+  //   }
+  
+  //   try {
+  //     const response = await fetch(`${apiUrl}/check-or-create-conversation`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         user_id_1: userId, // Buyer ID
+  //         user_id_2: product.user_id, // Seller ID
+  //       }),
+  //     });
+  
+  //     const data = await response.json();
+  
+  //     if (response.ok) {
+  //       // Navigate to the chat if the conversation exists or was created
+  //       navigate("/chat", {
+  //         state: {
+  //           conversation_id: data.conversation_id,
+  //           user_id: userId,
+  //           other_user_id: data.other_user_id,
+  //           other_username: data.other_username,
+  //         },
+  //       });
+  //     } else {
+  //       alert(`Could not initiate chat: ${data.message || 'Unknown error'}`);
+  //       console.error("Error:", data.message);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error contacting seller:", err);
+  //   }
+  // };
+
+  const handleContactSeller = async () => {
     if (!userId) {
       alert("You must be logged in to contact the seller.");
       navigate("/login");
       return;
     }
-  
+
     if (!listingData) {
       alert("Listing is missing.");
-      console.error("Listing is missing");
       return;
     }
-    
-    const {product, attributes } = listingData;
 
-    // Ensure the seller_id is available
+    const { product } = listingData;
+
     if (!product?.user_id) {
       alert("Seller information is missing.");
-      console.error("Seller ID is missing:", product);
       return;
     }
-  
-    try {
-      const response = await fetch(`${apiUrl}/check-or-create-conversation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id_1: userId, // Buyer ID
-          user_id_2: product.user_id, // Seller ID
-        }),
-      });
-  
-      const data = await response.json();
-  
-      if (response.ok) {
-        // Navigate to the chat if the conversation exists or was created
-        navigate("/chat", {
-          state: {
-            conversation_id: data.conversation_id,
-            user_id: userId,
-            other_user_id: data.other_user_id,
-            other_username: data.other_username,
-          },
-        });
-      } else {
-        alert(`Could not initiate chat: ${data.message || 'Unknown error'}`);
-        console.error("Error:", data.message);
-      }
-    } catch (err) {
-      console.error("Error contacting seller:", err);
+
+    if (userId === product.user_id) {
+      alert("You cannot contact yourself.");
+      return;
     }
-  };
+
+
+  try {
+    const response = await fetch(`${apiUrl}/check-or-create-conversation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        buyer_id: userId,
+        seller_id: product.user_id,
+        listing_id: product.listing_id,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      navigate(`/chat/${data.conversation_id}`);
+    } else {
+      alert(`Could not initiate chat: ${data.message || 'Unknown error'}`);
+    }
+  } catch (err) {
+    console.error("Error contacting seller:", err);
+  }
+};
+
 
   const renderAttributeValue = (attr) => {
     if (attr.number_value) return attr.number_value;

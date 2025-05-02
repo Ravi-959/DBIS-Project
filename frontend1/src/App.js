@@ -20,7 +20,7 @@ function App() {
         <Route path="/postad" element={<CategorySelection />} />
         <Route path="/postad/details" element={<SellDetails />} />
         <Route path="/listing/:listing_id" element={<Addetails />} />
-        <Route path="/chat" element={<Chatbox />} />
+        <Route path="/chat/:conversation_id?" element={<Chatbox />} /> {/* Updated to accept conversation_id */}
         <Route path="/category/:category_id" element={<Filterings />} />
         <Route path="/category/:category_id/:subcategory_id" element={<Filterings />} />       
         <Route path="*" element={<NotFound />} /> {/* 404 Page */}

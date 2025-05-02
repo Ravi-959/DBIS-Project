@@ -743,7 +743,7 @@ app.post("/conversations", async (req, res) => {
     if (existing.rows.length > 0) {
       return res.status(200).json({ conversation: existing.rows[0] });
     }
-    console.log("Oy there mate");
+    // console.log("Oy there mate");
   
     // Create new conversation
     const result = await pool.query(
@@ -771,11 +771,10 @@ app.get("/conversations/:userId", async (req, res) => {
        JOIN Users u2 ON c.seller_id = u2.user_id
        JOIN Listings l ON c.listing_id = l.listing_id
        WHERE c.buyer_id = $1 OR c.seller_id = $1
-       ORDER BY c.created_at DESC`,
-      [userId]
+       ORDER BY c.created_at ASC`,[userId]
     );
-    console.log("Oy there mate");
-    console.log(result.rows[0]);  // Log newly created conversation
+    // console.log("Oy there mate");
+    // console.log(result.rows[0]);  // Log newly created conversation
 
     res.status(200).json({ conversations: result.rows });
   } catch (err) {
@@ -787,6 +786,7 @@ app.get("/conversations/:userId", async (req, res) => {
 // Send a message
 app.post("/messages", async (req, res) => {
   const { conversation_id, sender_id, message_text } = req.body;
+  const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
   try {
     // Get the conversation to determine receiver
@@ -803,9 +803,9 @@ app.post("/messages", async (req, res) => {
     const receiver_id = sender_id === buyer_id ? seller_id : buyer_id;
 
     const result = await pool.query(
-      `INSERT INTO Messages (conversation_id, sender_id, receiver_id, message_text)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [conversation_id, sender_id, receiver_id, message_text]
+      `INSERT INTO Messages (conversation_id, sender_id, receiver_id, message_text, sent_at)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [conversation_id, sender_id, receiver_id, message_text, timestamp]
     );
 
     res.status(201).json({ message: result.rows[0] });
@@ -815,67 +815,80 @@ app.post("/messages", async (req, res) => {
   }
 });
 
+
 // Get messages for a conversation
+// Example: In your route for fetching messages
 app.get("/messages/:conversation_id", async (req, res) => {
-  const { conversation_id } = req.params;
-
   try {
-    const result = await pool.query(
-      `SELECT m.*, u.username FROM Messages m JOIN Users u ON m.sender_id = u.user_id
-       WHERE m.conversation_id = $1 ORDER BY m.sent_at ASC`,
-      [conversation_id]
-    );
+    const conversationId = parseInt(req.params.conversation_id, 10);
 
-    res.status(200).json({ messages: result.rows });
+    // Validate conversation_id
+    if (isNaN(conversationId)) {
+      return res.status(400).json({ error: "Invalid conversation_id" });
+    }
+
+    const query = "SELECT * FROM messages WHERE conversation_id = $1";
+    const result = await pool.query(query, [conversationId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "No messages found" });
+    }
+
+    return res.status(200).json({ messages: result.rows });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error fetching messages" });
+    console.error("Error fetching messages:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
-app.post("/check-or-create-conversation", async (req, res) => {
-  const { user_id_1, user_id_2 } = req.body; // user_id_1 should be the buyer, user_id_2 should be the seller
 
-  console.log("Received request:", { user_id_1, user_id_2 });
+
+app.post('/check-or-create-conversation', async (req, res) => {
+  const { buyer_id, seller_id, listing_id } = req.body;
+
+  // Check if buyer and seller are the same
+  if (buyer_id === seller_id) {
+    return res.status(400).json({ message: 'Buyer and seller cannot be the same.' });
+  }
 
   try {
-    // Validate if user IDs are present
-    if (!user_id_1 || !user_id_2) {
-      return res.status(400).json({ message: "Missing user IDs" });
-    }
-
-    // Query to check if a conversation already exists between the buyer and seller
+    // Check if a conversation already exists between the buyer and seller for this listing
     const result = await pool.query(
-      "SELECT * FROM conversations WHERE (buyer_id = $1 AND seller_id = $2) OR (buyer_id = $2 AND seller_id = $1)",
-      [user_id_1, user_id_2]
+      'SELECT * FROM conversations WHERE (buyer_id = $1 AND seller_id = $2 AND listing_id = $3) OR (buyer_id = $2 AND seller_id = $1 AND listing_id = $3)',
+      [buyer_id, seller_id, listing_id]
     );
 
     if (result.rows.length > 0) {
-      // If conversation exists, return the conversation_id
-      console.log("Conversation found:", result.rows[0].conversation_id);
-      return res.status(200).json({
-        conversation_id: result.rows[0].conversation_id,
-        other_user_id: user_id_2,
-        other_username: "Some Username", // Fetch the actual username from the users table if needed
-      });
+      return res.status(200).json({ message: 'Conversation already exists', conversation_id: result.rows[0].conversation_id });
+    }
+
+    // If no conversation exists, create a new conversation
+    const insertQuery = 'INSERT INTO conversations (buyer_id, seller_id, listing_id) VALUES ($1, $2, $3) RETURNING conversation_id';
+    const insertResult = await pool.query(insertQuery, [buyer_id, seller_id, listing_id]);
+
+    const newConversationId = insertResult.rows[0].conversation_id;
+
+    res.status(201).json({ message: 'Conversation created', conversation_id: newConversationId });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error checking or creating conversation' });
+  }
+});
+
+
+// Example endpoint to get product details based on listing_id
+app.get('/product/:listing_id', async (req, res) => {
+  const { listing_id } = req.params;
+  try {
+    const result = await pool.query('SELECT name FROM listings WHERE listing_id = $1', [listing_id]);
+    if (result.rows.length > 0) {
+      res.status(200).json({ product: result.rows[0] });
     } else {
-      // If no conversation exists, create a new one
-      const insertResult = await pool.query(
-        "INSERT INTO conversations (buyer_id, seller_id, listing_id) VALUES ($1, $2, $3) RETURNING conversation_id",
-        [user_id_1, user_id_2, 1] // Assuming `listing_id` is 1 for now, replace it with actual listing_id
-      );
-
-      console.log("Created new conversation:", insertResult.rows[0].conversation_id);
-
-      return res.status(200).json({
-        conversation_id: insertResult.rows[0].conversation_id,
-        other_user_id: user_id_2,
-        other_username: "Some Username", // Fetch from DB
-      });
+      res.status(404).json({ message: 'Product not found' });
     }
   } catch (error) {
-    console.error("Error in /check-or-create-conversation:", error);
-    return res.status(500).json({ message: "Server error", details: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching product details' });
   }
 });
 

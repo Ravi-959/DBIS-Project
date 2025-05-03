@@ -13,6 +13,12 @@ const CategorySelection = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        const authResponse = await fetch(`${apiUrl}/isLoggedIn`, {
+                  credentials: "include",
+                });
+        if (! authResponse.ok) {
+          navigate(`/login`);
+        }
         const response = await fetch(`${apiUrl}/categories`);
         if (response.ok) {
           const data = await response.json();

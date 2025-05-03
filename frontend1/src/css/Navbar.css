@@ -2,11 +2,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #1f1f1f;
+  background-color: #f7f8f9; /* Light background */
   padding: 10px 30px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #ddd;
   font-family: 'Segoe UI', sans-serif;
-  color: #eaeaea;
+  color: #002f34; /* OLX dark teal */
 }
 
 .navbar-left,
@@ -19,7 +19,13 @@
 .logo {
   font-size: 26px;
   font-weight: bold;
-  color: #ffce32;
+  font-family: 'Poppins', 'Segoe UI', sans-serif; /* rounded sans-serif look */
+  text-transform: lowercase;
+  background: linear-gradient(90deg, #0057ff, #00c3ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent; /* fallback for background-clip */
   cursor: pointer;
 }
 
@@ -35,18 +41,18 @@
 .main-search {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #555;
+  border: 1px solid #002f34;
   border-radius: 8px 0 0 8px;
   outline: none;
   font-size: 16px;
-  background-color: #1f1f1f;
-  color: #fff;
+  background-color: #ffffff;
+  color: #002f34;
 }
 
 /* Search button */
 .main-search-btn {
   padding: 0 16px;
-  background-color: #3b82f6;
+  background-color: #002f34;
   color: white;
   border: none;
   border-radius: 0 8px 8px 0;
@@ -58,7 +64,7 @@
 }
 
 .main-search-btn:hover {
-  background-color: #2563eb;
+  background-color: #014247;
 }
 
 /* Suggestions dropdown */
@@ -67,9 +73,8 @@
   top: 100%;
   left: 0;
   right: 0;
-  width: 88%;
-  background-color: #2a2a2a;
-  border: 1px solid #444;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
   border-top: none;
   border-radius: 0 0 8px 8px;
   z-index: 999;
@@ -81,50 +86,24 @@
 .suggestion-item {
   padding: 12px 16px;
   cursor: pointer;
-  color: #f0f0f0;
+  color: #002f34;
   transition: background 0.2s;
 }
 
 .suggestion-item:hover {
-  background-color: #3a3a3a;
-}
-
-.search-container {
-  display: flex;
-  flex: 1;
-  max-width: 1000px;
-}
-
-.main-search {
-  width: 500px;
-  padding: 10px 14px;
-  font-size: 14px;
-  border: none;
-  border-radius: 6px 0 0 6px;
-  outline: none;
-  background-color: #2c2c2c;
-  color: #fff;
-}
-
-.main-search-btn {
-  background-color: #3a77ff;
-  color: white;
-  padding: 10px 14px;
-  border: none;
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
+  background-color: #f0f0f0;
 }
 
 .icon {
   font-size: 18px;
-  color: #eaeaea;
+  color: #002f34;
   cursor: pointer;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
-  background-color: #ff8c00;
+  background-color: #a142f4; /* Adjust to your theme */
   color: #fff;
   font-weight: bold;
   border-radius: 50%;
@@ -147,11 +126,13 @@
 
 .logout-btn {
   background-color: transparent;
-  border: none;
+  border: 1px solid #002f34;
   font-size: 14px;
-  color: #eaeaea;
+  color: #002f34;
   cursor: pointer;
   margin-left: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
 }
 
 /* Dropdown styling */
@@ -161,7 +142,7 @@
 }
 
 .categories-dropdown-btn {
-  background: #2c2c2c;
+  background: transparent;
   border: none;
   padding: 10px 15px;
   border-radius: 6px;
@@ -171,17 +152,17 @@
   font-weight: bold;
   text-transform: uppercase;
   font-size: 14px;
-  color: #ffce32;
+  color: #002f34;
 }
 
 .categories-dropdown-btn:hover {
-  background: #3b3b3b;
+  background: #efefef;
 }
 
 .dropdown-icon {
   transition: transform 0.2s ease;
   margin-left: 5px;
-  color: #ffce32;
+  color: #002f34;
 }
 
 .dropdown-icon.rotate {
@@ -192,14 +173,14 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: #2b2b2b;
+  background: #ffffff;
   width: 900px;
-  border: 1px solid #444;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   z-index: 1000;
   padding: 20px;
-  color: #eaeaea;
+  color: #002f34;
 }
 
 .dropdown-header {
@@ -207,7 +188,7 @@
   text-transform: uppercase;
   margin-bottom: 15px;
   font-size: 16px;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid #ccc;
   padding-bottom: 8px;
 }
 
@@ -227,7 +208,7 @@
 .category-item {
   font-weight: bold;
   margin-bottom: 6px;
-  color: #ffce32;
+  color: #002f34;
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -235,24 +216,24 @@
 .subcategory-item {
   padding-left: 12px;
   font-size: 14px;
-  color: #ccc;
+  color: #666;
   cursor: pointer;
   transition: color 0.2s ease;
 }
 
 .category-item:hover,
 .subcategory-item:hover {
-  color: #fff;
+  color: #014247;
   text-decoration: underline;
 }
 
 .auth-btn {
   background-color: transparent;
-  border: 1px solid #ffce32;
+  border: 1px solid #002f34;
   padding: 8px 16px;
   border-radius: 4px;
   font-size: 14px;
-  color: #ffce32;
+  color: #002f34;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   font-weight: bold;
@@ -260,6 +241,6 @@
 }
 
 .auth-btn:hover {
-  background-color: #ffce32;
-  color: #1f1f1f;
+  background-color: #002f34;
+  color: #ffffff;
 }

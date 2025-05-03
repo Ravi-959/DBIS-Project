@@ -13,6 +13,12 @@ const Wishlist = () => {
     const fetchWishlist = async () => {
       try {
         // console.log("Fetching wishljhiist items...");
+        const authResponse = await fetch(`${apiUrl}/isLoggedIn`, {
+                  credentials: "include",
+                });
+        if (! authResponse.ok) {
+          navigate(`/login`);
+        }
         const response = await fetch(`${apiUrl}/wishlist-items`, {
           credentials: "include",
         });

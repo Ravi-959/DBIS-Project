@@ -25,6 +25,13 @@ const Filterings = () => {
       try {
         let response;
 
+        const authResponse = await fetch(`${apiUrl}/isLoggedIn`, {
+          credentials: "include",
+        });
+        const authData = await authResponse.json();
+
+        const userId = authData.user_id;
+
         if (paramCount === 1) {
           // Only category_id
             console.log("Fetching by category:", category_id);
@@ -75,16 +82,17 @@ const Filterings = () => {
           throw new Error(data.message || "Failed to fetch listings.");
         }
 
-
-        setListings(data.products || []);
-
         const allListings = data.products || [];
 
+        const otherlistings = allListings.filter(listing => listing.user_id !== userId);
+
+        setListings(otherlistings);
+
         const filtered = searchQuery
-          ? allListings.filter((listing) =>
+          ? otherlistings.filter((listing) =>
               listing.name.toLowerCase().includes(searchQuery)
             )
-          : allListings;
+          : otherlistings;
 
         // console.log(filtered);
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { apiUrl } from '../config/config';
 import '../css/EditListingItem.css';
 
 const EditListingItem = () => {
@@ -17,6 +18,22 @@ const EditListingItem = () => {
 
   const [isLoading, setIsLoading] = useState(true);  
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const CheckAuthentication = async () => {
+      try {
+        const authResponse = await fetch(`${apiUrl}/isLoggedIn`, {
+                  credentials: "include",
+                });
+        if (! authResponse.ok) {
+          navigate(`/login`);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    CheckAuthentication();
+  }, []);
 
   // ✅ Fetch listing data when component mounts
   useEffect(() => {

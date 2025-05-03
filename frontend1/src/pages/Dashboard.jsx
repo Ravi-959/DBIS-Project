@@ -21,11 +21,14 @@ const Dashboard = () => {
         const authData = await authResponse.json();
         setUsername(authData.username || "User");
 
+        const userId = authData.user_id;
+
         // Fetch listings with images
         const listingsResponse = await fetch(`${apiUrl}/listings-with-images`);
         if (listingsResponse.ok) {
           const listingsData = await listingsResponse.json();
-          setListings(listingsData);
+          const filteredListings = listingsData.filter(listing => listing.user_id !== userId);
+          setListings(filteredListings);  
         }
       } catch (error) {
         console.error("Error fetching data:", error);

@@ -19,11 +19,28 @@ const SellDetails = () => {
     contactInfo: ''
   });
 
+  useEffect(() => {
+      const CheckAuthentication = async () => {
+        try {
+          const authResponse = await fetch(`${apiUrl}/isLoggedIn`, {
+                    credentials: "include",
+                  });
+          if (! authResponse.ok) {
+            navigate(`/login`);
+          }
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+        }
+      };
+      CheckAuthentication();
+    }, []);
+
   // Memoized fetch function to prevent unnecessary recreations
   const fetchAttributes = useCallback(async (categoryId, subcategoryId) => {
     if (!categoryId) return;
 
     try {
+          
       const endpoint = subcategoryId 
         ? `${apiUrl}/subcategories/${subcategoryId}/attributes`
         : `${apiUrl}/categories/${categoryId}/attributes`;

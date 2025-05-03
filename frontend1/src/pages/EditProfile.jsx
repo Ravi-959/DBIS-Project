@@ -17,6 +17,12 @@ const EditProfile = () => {
     // Fetch current user data to prefill form (optional)
     const fetchUserData = async () => {
       try {
+        const authResponse = await fetch(`${apiUrl}/isLoggedIn`, {
+                  credentials: "include",
+                });
+        if (! authResponse.ok) {
+          navigate(`/login`);
+        }
         const response = await fetch(`${apiUrl}/user/profile`, {
           credentials: "include",
         });

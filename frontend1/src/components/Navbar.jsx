@@ -7,7 +7,6 @@ import {
   FaMagnifyingGlass,
   FaHeart,
   FaCommentDots,
-  FaBell,
   FaChevronDown,
 } from "react-icons/fa6";
 
@@ -179,11 +178,6 @@ const Navbar = () => {
     }
   };
 
-  const handleChatIconClick = () => {
-    // You can replace null with an actual conversation_id if you want to pass a specific conversation
-    navigate(`/chat`); // Assuming 'null' or an actual ID should be passed
-  };
-
 
   return (
     <nav className="navbar">
@@ -240,8 +234,8 @@ const Navbar = () => {
       {/* Right Section */}
       <div className="navbar-right">
         <FaHeart className="icon" onClick={() => checkAuthAndNavigate("/wishlist")} />
-        <FaCommentDots className="icon" onClick={() =>{handleChatIconClick();}} />
-        <FaBell className="icon" />
+        <FaCommentDots className="icon" onClick={() =>{checkAuthAndNavigate("/chat")}} />
+        {/* <FaBell className="icon" /> */}
         <div className="avatar" onClick={() => checkAuthAndNavigate(`/profile`)}>C</div>
         <button className="sell-btn" onClick={() => checkAuthAndNavigate("/postad")}>+ SELL</button>
 

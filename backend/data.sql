@@ -210,7 +210,7 @@ INSERT INTO listings (name, category_id, subcategory_id, user_id, price, descrip
 ('TATA NEXON', 2, 5, 1, 900000.00, 'Leather seats, New tires and in good condition'),
 ('PERCY JACKSON AND THE LIGHTNING THIEF', 6, 16, 2, 200.00, 'I accidentally received 2 copies, so looking for someone to buy and enter a new Fantacy world'),
 ('ASUS TUF GAMING LAPTOP F5061ACB', 1, 2, 5, 30000.00, 'Using for 2 years, Only for coding, I got a new laptop'),
-('2BHK FLAT with Sea View IN VIZAG', 4, 15, 6, 2500000.00,'Very good location, near to super market, hospital. Friendly neighbours and great sea view'),
+('2BHK FLAT with Sea View IN VIZAG', 4, 11, 6, 2500000.00,'Very good location, near to super market, hospital. Friendly neighbours and great sea view'),
 ('HERO HONDA PASSION', 2, 6, 4, 15000.00, 'This bike is my first automobile, it has taken me through a lot of wonderful experiences. Who knows someone also might need them.'),
 ('PERCY JACKSON AND THE BATTLE OF LABYRINTH', 6, 16, 2, 250.00, 'Just completed reading.');
 

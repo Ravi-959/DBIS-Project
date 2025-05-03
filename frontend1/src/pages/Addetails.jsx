@@ -223,7 +223,7 @@ const Addetails = () => {
 
           <div className="action-buttons">
             <button className="contact-button" onClick={() => checkAuthAndNavigate(handleContactSeller)} >Contact Seller</button>
-            <button className="save-button" onClick={() => checkAuthAndNavigate(handleSaveToWishlist)} >Save Listing</button>
+            <button className="save-button-ad" onClick={() => checkAuthAndNavigate(handleSaveToWishlist)} >Save Listing</button>
           </div>
         </div>
       </div>

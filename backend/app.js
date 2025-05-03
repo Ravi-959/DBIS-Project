@@ -970,45 +970,6 @@ app.get("/wishlist-items", async (req, res) => {
 ////////////////////////////////////////////////////
   // // Search related api-calls
 
-  // app.get("/search-suggestions", async (req, res) => {
-  //   const { query } = req.query;
-    
-  //   try {
-  //     // Search listings with their category/subcategory info
-  //     const result = await pool.query(`
-  //       SELECT 
-  //         l.listing_id,
-  //         l.name AS product_name,
-  //         c.name AS category_name,
-  //         c.category_id,
-  //         s.name AS subcategory_name,
-  //         s.subcategory_id
-  //       FROM listings l
-  //       JOIN categories c ON l.category_id = c.category_id
-  //       JOIN subcategories s ON l.subcategory_id = s.subcategory_id
-  //       WHERE LOWER(l.name) LIKE LOWER($1)
-  //       LIMIT 10
-  //     `, [`%${query}%`]);
-
-  //     // Format the results for the dropdown
-  //     const suggestions = result.rows.map(row => ({
-  //       id: row.listing_id,
-  //       display: `${row.product_name} - ${row.subcategory_name} (${row.category_name})`,
-  //       category_id: row.category_id,
-  //       subcategory_id: row.subcategory_id,
-  //       product_name: row.product_name
-  //     }));
-
-  //     res.status(200).json({ suggestions });
-  //   } catch (error) {
-  //     console.error("Error fetching search suggestions", error);
-  //     res.status(500).json({ 
-  //       message: "Error fetching search suggestions",
-  //       error: error.message 
-  //     });
-  //   }
-  // });
-
   app.get("/search-suggestions", async (req, res) => {
     const { query } = req.query;
   
@@ -1031,7 +992,7 @@ app.get("/wishlist-items", async (req, res) => {
         category_name: row.category_name,
         subcategory_id: row.subcategory_id,
         subcategory_name: row.subcategory_name,
-        display: `${row.category_name} > ${row.subcategory_name}`
+        display: `${row.category_name} > ${row.subcategory_name} > ${query}`
       }));
   
       res.status(200).json({ suggestions });
@@ -1101,6 +1062,201 @@ app.get("/search-listings", async (req, res) => {
     });
   }
 });
+
+////////////////////////////////////////////////////
+// Profile realted api calls
+
+app.get('/profile', async (req, res) => {
+  const userId = req.session.userId;
+
+  console.log("user in profile -", userId);
+  
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized: Please login to access profile." });
+  }
+
+  try {
+    // Fetch user details
+    const userQuery = await pool.query(
+      'SELECT user_id, username, email, phone_number FROM Users WHERE user_id = $1',
+      [userId]
+    );
+    const user = userQuery.rows[0];
+
+    // Fetch listings created by the user
+    const listingsQuery = await pool.query(
+      `WITH attribute_map AS (
+        SELECT 
+          la.listing_id,
+          a.name AS attribute_name,
+          a.data_type,
+          CASE 
+            WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
+            WHEN o.value IS NOT NULL THEN o.value
+            ELSE NULL
+          END AS value
+        FROM listing_attributes la
+        JOIN attributes a ON la.attribute_id = a.attribute_id
+        LEFT JOIN attribute_options o ON la.option_id = o.option_id
+      )
+      SELECT 
+        l.*,
+        li.image_url,
+        COALESCE(json_agg(jsonb_build_object(
+          'name', t.attribute_name,
+          'value', t.value
+        )) FILTER (WHERE t.attribute_name IS NOT NULL), '[]') AS attributes
+      FROM listings l
+      LEFT JOIN (
+        SELECT 
+          listing_id, 
+          image_url,
+          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
+        FROM listing_images
+      ) li ON l.listing_id = li.listing_id AND li.rn = 1
+      LEFT JOIN attribute_map t ON l.listing_id = t.listing_id
+      WHERE l.user_id = $1
+      GROUP BY l.listing_id, li.image_url
+      ORDER BY l.listing_id`,
+      [userId]
+    );
+
+    const listingsWithImages = listingsQuery.rows.map(row => ({
+      ...row,
+      images: row.image_url ? [{ image_url: row.image_url }] : []
+    }));
+
+
+    res.status(200).json({
+      user,
+      listings :listingsWithImages
+    });
+
+  } catch (error) {
+    console.error("Error fetching profile data:", error);
+    res.status(500).json({ message: "Server error while fetching profile" });
+  }
+});
+
+
+app.post('/profile/update', async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized: Please login to update profile." });
+  }
+
+  const { username, phone_number } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE Users
+       SET username = $1,
+           phone_number = $2
+       WHERE user_id = $3
+       RETURNING user_id, username, email, phone_number`,
+      [username, phone_number, userId]
+    );
+
+    res.status(200).json({ message: "Profile updated successfully", user: result.rows[0] });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Server error while updating profile" });
+  }
+});
+
+// GET one listing by id
+app.get('/listings/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+      const { rows } = await pool.query(`
+          SELECT listing_id, name, category_id, subcategory_id, price, description
+          FROM Listings
+          WHERE listing_id = $1
+      `, [id]);
+
+      if (rows.length === 0) return res.status(404).json({ message: 'Listing not found' });
+
+      res.json(rows[0]);
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PUT update listing by ID
+app.put('/listings/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, category_id, subcategory_id, price, description } = req.body;
+
+  try {
+      const { rows } = await pool.query(`
+          UPDATE Listings
+          SET name = $1, category_id = $2, subcategory_id = $3, price = $4, description = $5
+          WHERE listing_id = $6
+          RETURNING *
+      `, [name, category_id, subcategory_id, price, description, id]);
+
+      if (rows.length === 0) return res.status(404).json({ message: 'Listing not found' });
+
+      res.json({ message: 'Listing updated successfully', listing: rows[0] });
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/listings/:listingId', async (req, res) => {
+  console.log("i am here in delete listing");
+  // 1) Grab the listingId from the URL
+  const { listingId } = req.params;
+
+  // 2) Ensure user is logged in
+  const userId = req.session.userId;
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized: please log in.' });
+  }
+
+  // 3) Open a client and begin transaction
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 4) Verify the listing belongs to this user
+    const { rowCount } = await client.query(
+      'SELECT 1 FROM Listings WHERE listing_id = $1 AND user_id = $2',
+      [listingId, userId]
+    );
+    if (rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Listing not found or not yours.' });
+    }
+
+    // 5) Delete dependent rows (images, attributes, conversations, messages)
+    await client.query('DELETE FROM listing_images WHERE listing_id = $1', [listingId]);
+    await client.query('DELETE FROM Listing_Attributes WHERE listing_id = $1', [listingId]);
+    await client.query(
+      'DELETE FROM Messages WHERE conversation_id IN (SELECT conversation_id FROM Conversations WHERE listing_id = $1)',
+      [listingId]
+    );
+    await client.query('DELETE FROM Conversations WHERE listing_id = $1', [listingId]);
+
+    // 6) Delete the listing itself
+    await client.query('DELETE FROM Listings WHERE listing_id = $1', [listingId]);
+
+    // 7) Commit and respond
+    await client.query('COMMIT');
+    res.json({ message: 'Listing removed successfully' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error deleting listing:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
+
 
 ////////////////////////////////////////////////////
 // Start the server

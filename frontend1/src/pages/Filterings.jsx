@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams,useNavigate } from "react-router-dom";
+import { useParams,useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { apiUrl } from "../config/config";
 import FilterBar from "../components/Filterbar";
@@ -14,6 +14,11 @@ const Filterings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [FilteringName, setFilteringName] = useState("");
+
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const searchQuery = queryParams.get("query")?.toLowerCase() || "";
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -72,9 +77,19 @@ const Filterings = () => {
 
 
         setListings(data.products || []);
-        setFilteredListings(data.products || []); // ✅ Initialize filtered listings
 
-        console.log("listings -",data.products);
+        const allListings = data.products || [];
+
+        const filtered = searchQuery
+          ? allListings.filter((listing) =>
+              listing.name.toLowerCase().includes(searchQuery)
+            )
+          : allListings;
+
+        // console.log(filtered);
+
+        setFilteredListings(filtered); // ✅ Initialize filtered listings
+
       } catch (err) {
         console.error("Fetch error:", err);
         setError(err.message);
@@ -84,7 +99,7 @@ const Filterings = () => {
     };
 
     fetchListings();
-  }, [category_id, subcategory_id, paramCount]);
+  }, [category_id, subcategory_id, paramCount, searchQuery]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("en-IN", {

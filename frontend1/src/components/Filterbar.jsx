@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { apiUrl } from "../config/config";
 import "../css/filterbar.css";
 
 const MAX_VISIBLE_ENUM_OPTIONS = 6;
 
-const FilterBar = ({ categoryId, subcategoryId, allListings, setFilteredListings }) => {
+const FilterBar = ({ categoryId, subcategoryId, allListings, setFilteredListings,  }) => {
   const [attributes, setAttributes] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterValues, setFilterValues] = useState({});
   const [expandedEnums, setExpandedEnums] = useState({});
   // const [searchParams, setSearchParams] = useSearchParams();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
 
   const fetchAttributes = useCallback(async () => {
@@ -189,7 +189,7 @@ const FilterBar = ({ categoryId, subcategoryId, allListings, setFilteredListings
                   const newPath = isSelected
                     ? `/category/${categoryId}/` // redirect to category only
                     : `/category/${categoryId}/${subcat.subcategory_id}`;
-                  window.location.href = newPath;
+                  navigate(newPath);
                 }}
               >
                 {subcat.name}

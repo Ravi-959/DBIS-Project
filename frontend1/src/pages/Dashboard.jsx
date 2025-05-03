@@ -84,19 +84,19 @@ const Dashboard = () => {
                     <div className="listing-price">₹{formatPrice(listing.price)}</div>
                     <div className="listing-title">{listing.name}</div>
                     <div className="listing-attributes">
-                        {listing.attributes && listing.attributes.length > 0 ? (
-                          listing.attributes
-                            .filter(attr => attr.name.toLowerCase() !== 'price') // exclude 'Price'
-                            .slice(0, 3)
-                            .map((attr, index) => (
-                              <div key={index} className="attribute-line">
-                                <strong>{attr.name}: </strong>
-                                <span>{attr.value}</span>
-                              </div>
-                            ))
-                        ) : (
-                          <p className="no-attributes">No attributes available.</p>
-                        )}
+                    {listing.attributes && listing.attributes.length > 0 ? (
+                      listing.attributes
+                        .filter(attr => attr.name.toLowerCase() !== 'price') // exclude 'Price'
+                        .slice(0, 3)
+                        .map((attr, index) => (
+                          <div key={index} className="attribute-line">
+                            <strong>{attr.name}: </strong>
+                            <span>{attr.value}</span>
+                          </div>
+                        ))
+                    ) : (
+                      <p className="no-attributes">No attributes available.</p>
+                    )}
                     </div>
                   </div>
                 </div>

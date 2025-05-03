@@ -10,7 +10,9 @@ import Wishlist from "./pages/wishlist";
 import CategorySelection from "./pages/Categoryselection";
 import Chatbox from "./pages/Chatbox"; // Import Chatbox
 import SellDetails from "./pages/PostAd";
-
+import Profile from "./pages/Profile"
+import EditProfile  from "./pages/EditProfile";
+import EditListing from "./pages/EditListing";
 
 function App() {
   return (
@@ -19,6 +21,9 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />}/>
+        <Route path="/edit-profile" element={<EditProfile />}/>
+        <Route path="edit-listing/:listingId" element={<EditListing />} />
         <Route path="/postad" element={<CategorySelection />} />
         <Route path="/postad/details" element={<SellDetails />} />
         <Route path="/listing/:listing_id" element={<Addetails />} />

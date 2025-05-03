@@ -39,12 +39,17 @@ const SearchBar = ({ navigate }) => {
   };
 
   const handleSuggestionClick = (suggestion) => {
-    setQuery(`${suggestion.category_name} > ${suggestion.subcategory_name}`);
-    setShowSuggestions(false);
-    const searchUrl = `/category/${suggestion.category_id}/${suggestion.subcategory_id}`;
+    const queryParam = `query=${encodeURIComponent(query)}`;
+    let searchUrl = `/category/${suggestion.category_id}`;
+  
+    if (suggestion.subcategory_id) {
+      searchUrl += `/${suggestion.subcategory_id}`;
+    }
+  
+    searchUrl += `?${queryParam}`;
     navigate(searchUrl);
   };
-
+  
   return (
     <div className="navbar-center" style={{ position: 'relative' }}>
       <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', width: '100%' }}>
@@ -234,10 +239,10 @@ const Navbar = () => {
 
       {/* Right Section */}
       <div className="navbar-right">
-        <FaHeart className="icon" onClick={() => navigate("/wishlist")} />
+        <FaHeart className="icon" onClick={() => checkAuthAndNavigate("/wishlist")} />
         <FaCommentDots className="icon" onClick={() =>{handleChatIconClick();}} />
         <FaBell className="icon" />
-        <div className="avatar" onClick={() => navigate("/profile")}>C</div>
+        <div className="avatar" onClick={() => checkAuthAndNavigate(`/profile`)}>C</div>
         <button className="sell-btn" onClick={() => checkAuthAndNavigate("/postad")}>+ SELL</button>
 
         {isLoggedIn ? (

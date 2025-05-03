@@ -85,11 +85,19 @@ const SellDetails = () => {
     
     const validImageUrls = imageUrls.filter(url => url.trim() !== '');
     const attributeValues = {};
+    let priceValue = '';
     
     // Prepare attribute values for submission
     attributes.forEach(attr => {
       const fieldName = `attr_${attr.attribute_id}`;
-      attributeValues[attr.attribute_id] = formData[fieldName];
+      const value = formData[fieldName];
+
+      if (attr.name.toLowerCase() === 'price') {
+        priceValue = value;
+      }
+
+      attributeValues[attr.attribute_id] = value;
+      
     });
 
     try {
@@ -100,6 +108,7 @@ const SellDetails = () => {
         },
         body: JSON.stringify({
           ...formData,
+          price: priceValue,
           imageUrls: validImageUrls,
           attributes: attributeValues
         }),
@@ -190,7 +199,7 @@ const SellDetails = () => {
           />
         </div>
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>Price*</label>
           <div className="price-input">
             <span>₹</span>
@@ -204,7 +213,7 @@ const SellDetails = () => {
               required
             />
           </div>
-        </div>
+        </div> */}
 
         {/* Dynamic attribute fields */}
         {attributes.map(attribute => (

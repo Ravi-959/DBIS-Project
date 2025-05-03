@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { apiUrl } from "../config/config";
 import "../css/Addetails.css";
+import LoginModal from "../pages/LoginModal.jsx";
+
 
 const Addetails = () => {
   const { listing_id } = useParams();
@@ -10,8 +12,51 @@ const Addetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const userId = 1; 
+  const checkAuthAndNavigate = async (onAuthenticatedAction) => {
+    try {
+      const response = await fetch(`${apiUrl}/isloggedin`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        onAuthenticatedAction();
+      } else {
+        setShowLoginModal(true);
+      }
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleSaveToWishlist = async () => {
+    try {
+
+      const {product} = listingData;
+
+      const response = await fetch(`${apiUrl}/wishlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ listing_id: product.listing_id }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Added to wishlist!");
+      } else {
+        alert(data.message || "Failed to add to wishlist");
+      }
+    } catch (error) {
+      console.error("Error saving to wishlist:", error);
+      alert("Something went wrong");
+    }
+  };
+
 
   useEffect(() => {
     const fetchListingDetails = async () => {
@@ -49,74 +94,7 @@ const Addetails = () => {
     }).format(price).replace('₹', '₹ ');
   };
 
-    
-  // const handleContactSeller = async () => {
-
-  //   if (!userId) {
-  //     alert("You must be logged in to contact the seller.");
-  //     navigate("/login");
-  //     return;
-  //   }
-  
-  //   if (!listingData) {
-  //     alert("Listing is missing.");
-  //     console.error("Listing is missing");
-  //     return;
-  //   }
-    
-  //   const {product, attributes } = listingData;
-
-  //   // Ensure the seller_id is available
-  //   if (!product?.user_id) {
-  //     alert("Seller information is missing.");
-  //     console.error("Seller ID is missing:", product);
-  //     return;
-  //   }
-  
-  //   try {
-  //     const response = await fetch(`${apiUrl}/check-or-create-conversation`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         user_id_1: userId, // Buyer ID
-  //         user_id_2: product.user_id, // Seller ID
-  //       }),
-  //     });
-  
-  //     const data = await response.json();
-  
-  //     if (response.ok) {
-  //       // Navigate to the chat if the conversation exists or was created
-  //       navigate("/chat", {
-  //         state: {
-  //           conversation_id: data.conversation_id,
-  //           user_id: userId,
-  //           other_user_id: data.other_user_id,
-  //           other_username: data.other_username,
-  //         },
-  //       });
-  //     } else {
-  //       alert(`Could not initiate chat: ${data.message || 'Unknown error'}`);
-  //       console.error("Error:", data.message);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error contacting seller:", err);
-  //   }
-  // };
-
   const handleContactSeller = async () => {
-    if (!userId) {
-      alert("You must be logged in to contact the seller.");
-      navigate("/login");
-      return;
-    }
-
-    if (!listingData) {
-      alert("Listing is missing.");
-      return;
-    }
 
     const { product } = listingData;
 
@@ -125,18 +103,12 @@ const Addetails = () => {
       return;
     }
 
-    if (userId === product.user_id) {
-      alert("You cannot contact yourself.");
-      return;
-    }
-
-
   try {
     const response = await fetch(`${apiUrl}/check-or-create-conversation`, {
       method: "POST",
+      credentials : "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        buyer_id: userId,
         seller_id: product.user_id,
         listing_id: product.listing_id,
       }),
@@ -199,6 +171,7 @@ const Addetails = () => {
   return (
     <>
       <Navbar />
+      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       <div className="product-details-container">
         <div className="product-image">
           <img 
@@ -228,13 +201,15 @@ const Addetails = () => {
             </div>
             
             {/* Display attributes */}
-            {attributes?.map(attr => (
-              <div key={attr.attribute_id} className="detail-row">
-                <span className="detail-label">{attr.attribute_name}:</span>
-                <span className="detail-value">
-                  {renderAttributeValue(attr)}
-                </span>
-              </div>
+            {attributes
+              ?.filter(attr => attr.attribute_name?.toLowerCase() !== 'price')
+              .map(attr => (
+                <div key={attr.attribute_id} className="detail-row">
+                  <span className="detail-label">{attr.attribute_name}:</span>
+                  <span className="detail-value">
+                    {renderAttributeValue(attr)}
+                  </span>
+                </div>
             ))}
           </div>
 
@@ -247,8 +222,8 @@ const Addetails = () => {
 
 
           <div className="action-buttons">
-            <button className="contact-button" onClick={handleContactSeller} >Contact Seller</button>
-            <button className="save-button">Save Listing</button>
+            <button className="contact-button" onClick={() => checkAuthAndNavigate(handleContactSeller)} >Contact Seller</button>
+            <button className="save-button" onClick={() => checkAuthAndNavigate(handleSaveToWishlist)} >Save Listing</button>
           </div>
         </div>
       </div>

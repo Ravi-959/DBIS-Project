@@ -15,10 +15,44 @@
   color: #f8d57e;
 }
 
+
 .filter-group {
   margin-bottom: 18px;
   padding: 0 4px;
 }
+
+.subcategory-filter {
+  margin-bottom: 20px;
+}
+
+.subcategory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.subcategory-item-sidebar {
+  padding: 8px 12px;
+  background-color: #2d2d2d;
+  color: #eaeaea;
+  border: 1px solid #444;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.subcategory-item-sidebar:hover {
+  background-color: #3b3b3b;
+  border-color: #666;
+}
+
+.subcategory-item-sidebar.selected {
+  background-color: #002f34;
+  color: #23e5db;
+  border-color: #23e5db;
+}
+
 
 .filter-label {
   display: block;
@@ -154,6 +188,26 @@
   cursor: pointer;
   font-size: 14px;
   margin-top: 5px;
+}
+
+.apply-filters-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.apply-filters-btn {
+  padding: 10px 20px;
+  background-color: #23e5db;
+  color: #002f34;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.apply-filters-btn:hover {
+  background-color: #1cc8c0;
 }
 
 

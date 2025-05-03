@@ -11,6 +11,75 @@ import {
   FaChevronDown,
 } from "react-icons/fa6";
 
+const SearchBar = ({ navigate }) => {
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (query.length > 1) {
+      const timer = setTimeout(() => {
+        fetchSuggestions();
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setSuggestions([]);
+    }
+  }, [query]);
+
+  const fetchSuggestions = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/search-suggestions?query=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      setSuggestions(data.suggestions || []);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setQuery(`${suggestion.category_name} > ${suggestion.subcategory_name}`);
+    setShowSuggestions(false);
+    const searchUrl = `/category/${suggestion.category_id}/${suggestion.subcategory_id}`;
+    navigate(searchUrl);
+  };
+
+  return (
+    <div className="navbar-center" style={{ position: 'relative' }}>
+      <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', width: '100%' }}>
+        <input
+          type="text"
+          placeholder="Search products..."
+          className="main-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query.length > 1 && setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        />
+        <button className="main-search-btn" type="submit">
+          <FaMagnifyingGlass />
+        </button>
+      </form>
+
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="search-suggestions">
+          {suggestions.map((suggestion, idx) => (
+            <div
+              key={idx}
+              className="suggestion-item"
+              onMouseDown={() => handleSuggestionClick(suggestion)}
+            >
+              {suggestion.display}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 const Navbar = () => {
   const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -160,16 +229,8 @@ const Navbar = () => {
       </div>
 
       {/* Center Section */}
-      <div className="navbar-center">
-        <input
-          type="text"
-          placeholder="Find Cars, Mobile Phones and more..."
-          className="main-search"
-        />
-        <button className="main-search-btn">
-          <FaMagnifyingGlass />
-        </button>
-      </div>
+      <SearchBar navigate={navigate} />
+
 
       {/* Right Section */}
       <div className="navbar-right">

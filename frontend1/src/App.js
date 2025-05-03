@@ -6,9 +6,11 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/Notfound";
 import Addetails from "./pages/Addetails";
 import Filterings from "./pages/Filterings";
+import Wishlist from "./pages/wishlist";
 import CategorySelection from "./pages/Categoryselection";
 import Chatbox from "./pages/Chatbox"; // Import Chatbox
 import SellDetails from "./pages/PostAd";
+
 
 function App() {
   return (
@@ -22,7 +24,8 @@ function App() {
         <Route path="/listing/:listing_id" element={<Addetails />} />
         <Route path="/chat/:conversation_id?" element={<Chatbox />} /> {/* Updated to accept conversation_id */}
         <Route path="/category/:category_id" element={<Filterings />} />
-        <Route path="/category/:category_id/:subcategory_id" element={<Filterings />} />       
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/category/:category_id/:subcategory_id" element={<Filterings />} /> 
         <Route path="*" element={<NotFound />} /> {/* 404 Page */}
       </Routes>
   );

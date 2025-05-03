@@ -43,49 +43,50 @@ INSERT INTO Subcategories (category_id, name) VALUES
 (6, 'Books'), --16
 (6, 'Sports Equipment');
 
-INSERT INTO Attributes (name, data_type) VALUES
+INSERT INTO Attributes (name, data_type, min_value, max_value) VALUES
 -- Electronics attributes
-('Electronics Brand', 'enum'),          -- 1
-('RAM', 'enum'),                        -- 2
-('Storage', 'enum'),                    -- 3
-('Laptop Processor','enum'),            -- 4
-('Lens Resolution', 'number'),          -- 5
-('Camera Category','enum'),             -- 6
-('TV Size','number'),                   -- 7
-('TV display','enum'),                  -- 8
+('Electronics Brand', 'enum', NULL, NULL),          
+('RAM', 'enum', NULL, NULL),                        
+('Storage', 'enum', NULL, NULL),                    
+('Laptop Processor','enum', NULL, NULL),            
+('Lens Resolution', 'number', 5, 108),              
+('Camera Category','enum', NULL, NULL),             
+('TV Size','number', 24, 85),                       
+('TV Display','enum', NULL, NULL),                  
 
 -- Vehicle attributes
-('Vehicle Company', 'enum'),            -- 9
-('Model Year', 'number'),               -- 10
-('KM Driven', 'number'),                -- 11
-('Fuel Type', 'enum'),                  -- 12
-('Transmission', 'enum'),               -- 13
-('Vehicle Color', 'enum'),              -- 14
+('Vehicle Company', 'enum', NULL, NULL),            
+('Model Year', 'number', 1990, 2025),               
+('KM Driven', 'number', 1, 300000),                 
+('Fuel Type', 'enum', NULL, NULL),                 
+('Transmission', 'enum', NULL, NULL),              
+('Vehicle Color', 'enum', NULL, NULL),             
 
 -- Furniture attributes
-('Furniture Brand', 'enum'),            -- 15
-('Material', 'enum'),                   -- 16
-('Furniture Color', 'enum'),            -- 17
-('Furniture Condition', 'enum'),        -- 18
+('Furniture Brand', 'enum', NULL, NULL),            
+('Material', 'enum', NULL, NULL),                   
+('Furniture Color', 'enum', NULL, NULL),            
+('Furniture Condition', 'enum', NULL, NULL),        
 
 -- Real Estate attributes
-('BHK', 'enum'),                        -- 19
-('Area (sqft)', 'number'),              -- 20
-('Floor', 'enum'),                      -- 21
-('Facing', 'enum'),                     -- 22
+('BHK', 'enum', NULL, NULL),                        
+('Area (sqft)', 'number', 200, 10000),              
+('Floor', 'enum', NULL, NULL),                      
+('Facing', 'enum', NULL, NULL),                     
 
 -- Fashion attributes
-('Fashion Brand','enum'),               -- 23
-('Size', 'number'),                     -- 24
-('Type', 'enum'),                       -- 25
-('Fabric Material', 'enum'),            -- 26
+('Fashion Brand','enum', NULL, NULL),               
+('Size', 'number', 28, 46),                         
+('Type', 'enum', NULL, NULL),                       
+('Fabric Material', 'enum', NULL, NULL),            
 
 -- Books & Sports attributes
-('Author', 'enum'),                     -- 27
-('Book Publisher', 'enum'),             -- 28
-('Sports Name','enum'),                 -- 29
-('Sports Equipment Brand','enum');      -- 30
+('Author', 'enum', NULL, NULL),                     
+('Book Publisher', 'enum', NULL, NULL),             
+('Sports Name','enum', NULL, NULL),                 
+('Sports Equipment Brand','enum', NULL, NULL),     
 
+('Price','number',1,1000000);
 
 INSERT INTO Attribute_Options (attribute_id, value) VALUES
 -- Electronics attributes
@@ -123,6 +124,15 @@ INSERT INTO Attribute_Options (attribute_id, value) VALUES
 (28, 'Hyperion'), (28, 'HarperCollins'), (28, 'Random House'), (28, 'Simon & Schuster'), (28, 'Bloomsbury'), (28, 'Scholastic'),
 (29, 'Cricket'), (29, 'Football'), (29, 'Basketball'), (29, 'Tennis'), (29, 'Badminton'), (29, 'Hockey'),
 (30, 'Nike'), (30, 'Adidas'), (30, 'Puma'), (30, 'Yonex'), (30, 'Nivia'), (30, 'MRF');                         -- 144
+
+
+INSERT INTO Category_Attributes (category_id, attribute_id, is_required, display_order) VALUES
+(1,31,true,0),
+(2,31,true,0),
+(3,31,true,0),
+(4,31,true,0),
+(5,31,true,0),
+(6,31,true,0);
 
 
 -- Electronics (category_id = 1)
@@ -200,7 +210,11 @@ INSERT INTO listings (name, category_id, subcategory_id, user_id, price, descrip
 ('TATA NEXON', 2, 5, 1, 900000.00, 'Leather seats, New tires and in good condition'),
 ('PERCY JACKSON AND THE LIGHTNING THIEF', 6, 16, 2, 200.00, 'I accidentally received 2 copies, so looking for someone to buy and enter a new Fantacy world'),
 ('ASUS TUF GAMING LAPTOP F5061ACB', 1, 2, 5, 30000.00, 'Using for 2 years, Only for coding, I got a new laptop'),
-('2BHK FLAT with Sea View IN VIZAG', 4, 15, 6, 2500000.00,'Very good location, near to super market, hospital. Friendly neighbours and great sea view');
+('2BHK FLAT with Sea View IN VIZAG', 4, 15, 6, 2500000.00,'Very good location, near to super market, hospital. Friendly neighbours and great sea view'),
+('HERO HONDA PASSION', 2, 6, 4, 15000.00, 'This bike is my first automobile, it has taken me through a lot of wonderful experiences. Who knows someone also might need them.'),
+('PERCY JACKSON AND THE BATTLE OF LABYRINTH', 6, 16, 2, 250.00, 'Just completed reading.');
+
+
 
 INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES
 (1,'/images/alto1.jpg','t'),
@@ -208,42 +222,45 @@ INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES
 (3,'/images/tatanexon1.jpg','t'),
 (4,'/images/pjo1.jpg','t'),
 (5,'/images/asusl1.jpg','t'),
-(6,'/images/flat1.jpg','t');
+(6,'/images/flat1.jpg','t'),
+(7,'/images/bike1.jpg','t'),
+(8,'/images/pjo2.jpg','t');
 
--- Insert all listing attributes in one batch
-INSERT INTO Listing_Attributes 
-(listing_id, attribute_id, number_value, option_id) VALUES
--- MARUTHI SUZUKI ALTO 700 (listing_id = 1)
-(1, 9, NULL, 42 ),
-(1, 10, NULL, 43),   
-(1, 11, 20000, NULL),   
-(1, 12, NULL, 49),
-
--- MRF Champ Kashmir Willow Cricket Bat (listing_id = 2)
-(2, 29, NULL,133),   
-(2, 30, NULL,144 ), 
-
--- TATA NEXON (listing_id = 3)
-(3, 9, NULL,40 ), 
-(3, 10, NULL, 43),  
-(3, 11, 20000, NULL),  
-(3, 12, NULL, 49),
-(3, 13, NULL, 56), 
-
--- PERCY JACKSON BOOK (listing_id = 4)
-(4, 27,NULL, 122), 
-(4, 28,NULL, 127 ),
-
--- ASUS LAPTOP (listing_id = 5)
+INSERT INTO listing_attributes (listing_id, attribute_id, number_value, option_id) VALUES
+(1, 9, NULL, 42),
+(1, 10, 2005.00, NULL),
+(1, 11, 20000.00, NULL),
+(1, 12, NULL, 43),
+(1, 31, 300000.00, NULL),
+(2, 29, NULL, 133),
+(2, 30, NULL, 144),
+(2, 31, 1890.00, NULL),
+(3, 9, NULL, 40),
+(3, 10, 2011.00, NULL),
+(3, 11, 20000.00, NULL),
+(3, 12, NULL, 43),
+(3, 13, NULL, 49),
+(3, 31, 900000.00, NULL),
+(4, 27, NULL, 122),
+(4, 28, NULL, 127),
+(4, 31, 200.00, NULL),
 (5, 1, NULL, 4),
 (5, 2, NULL, 11),
 (5, 3, NULL, 17),
 (5, 4, NULL, 23),
-
--- REAL ESTATE LISTING (listing_id = 6)
+(5, 31, 30000.00, NULL),
 (6, 19, NULL, 86),
-(6, 20, 700 , NULL),
-(6, 22, NULL, 99);
+(6, 20, 700.00, NULL),
+(6, 22, NULL, 99),
+(6, 31, 2500000.00, NULL),
+(7, 9, NULL, 38),
+(7, 10, 2010.00, NULL),
+(7, 11, 15667.00, NULL),
+(7, 14, NULL, 55),
+(7, 31, 15000.00, NULL),
+(8, 27, NULL, 122),
+(8, 28, NULL, 127),
+(8, 31, 250.00, NULL);
 
 
 -- Insert a conversation (RK_BOOK_STORE is the buyer, TATA_MOTORS is the seller)

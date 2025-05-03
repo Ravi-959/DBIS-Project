@@ -1,6 +1,7 @@
 -- Drop tables in reverse order of dependency
 DROP TABLE IF EXISTS Listing_Attributes CASCADE;
 DROP TABLE IF EXISTS listing_images CASCADE;
+DROP TABLE IF EXISTS Wishlists CASCADE;
 DROP TABLE IF EXISTS Messages CASCADE;
 DROP TABLE IF EXISTS Conversations CASCADE;
 DROP TABLE IF EXISTS Listings CASCADE;
@@ -51,8 +52,15 @@ CREATE TABLE Listings (
 CREATE TABLE Attributes (
     attribute_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    data_type VARCHAR(20) NOT NULL CHECK (data_type IN ('number', 'enum'))
+    data_type VARCHAR(20) NOT NULL CHECK (data_type IN ('number', 'enum')),
+    min_value NUMERIC,  
+    max_value NUMERIC, 
+    CHECK (
+        data_type != 'number' OR 
+        (min_value IS NOT NULL AND max_value IS NOT NULL AND min_value <= max_value)
+    )
 );
+
 
 -- Table for predefined options (for enum type attributes)
 CREATE TABLE Attribute_Options (
@@ -123,4 +131,12 @@ CREATE TABLE listing_images (
   image_url VARCHAR(255) NOT NULL,
   is_primary BOOLEAN DEFAULT false,
   FOREIGN KEY (listing_id) REFERENCES Listings(listing_id)
+);
+
+CREATE TABLE Wishlists (
+    user_id INT NOT NULL,
+    listing_id INT NOT NULL,
+    PRIMARY KEY (user_id, listing_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id) ON DELETE CASCADE
 );

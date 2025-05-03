@@ -10,6 +10,7 @@ const Filterings = () => {
   const paramCount = [category_id, subcategory_id].filter(Boolean).length;
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
+  const [filteredListings, setFilteredListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [FilteringName, setFilteringName] = useState("");
@@ -71,6 +72,9 @@ const Filterings = () => {
 
 
         setListings(data.products || []);
+        setFilteredListings(data.products || []); // ✅ Initialize filtered listings
+
+        console.log("listings -",data.products);
       } catch (err) {
         console.error("Fetch error:", err);
         setError(err.message);
@@ -113,7 +117,7 @@ const Filterings = () => {
     );
   }
 
-  if (listings.length === 0) {
+  if (filteredListings.length === 0) {
     return (
       <>
         <Navbar />
@@ -121,7 +125,10 @@ const Filterings = () => {
     <div className="filterings-content">
       <div className="filter-sidebar">
         <FilterBar categoryId={category_id} 
-        subcategoryId={subcategory_id} />
+        subcategoryId={subcategory_id}
+        allListings={listings} // ✅ Pass original listings
+        setFilteredListings={setFilteredListings} // ✅ Pass setter 
+        />
       </div>
         <div className="listings-section">
           <h2>No Listings Found</h2>
@@ -140,12 +147,15 @@ const Filterings = () => {
     <div className="filterings-content">
       <div className="filter-sidebar">
         <FilterBar categoryId={category_id} 
-        subcategoryId={subcategory_id} />
+        subcategoryId={subcategory_id}
+        allListings={listings} // ✅ Pass original listings
+        setFilteredListings={setFilteredListings} // ✅ Pass setter
+        />
       </div>
       <div className="listings-section">
         <h1 className="title">Products in {FilteringName}</h1>
         <div className="listings-grid">
-          {listings.map((listing) => (
+          {filteredListings.map((listing) => (
           <div 
           key={listing.listing_id} 
           className="listing-card"
@@ -177,16 +187,19 @@ const Filterings = () => {
                   </span>
                 </div>
                 <div className="listing-attributes">
-                  {listing.attributes && listing.attributes.length > 0 ? (
-                    listing.attributes.map((attr, index) => (
-                      <div key={index} className="attribute-line">
-                        <strong>{attr.name}: </strong>
-                        <span>{attr.value}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="no-attributes">No attributes available.</p>
-                  )}
+                    {listing.attributes && listing.attributes.length > 0 ? (
+                      listing.attributes
+                        .filter(attr => attr.name.toLowerCase() !== 'price') // exclude 'Price'
+                        .slice(0, 3)
+                        .map((attr, index) => (
+                          <div key={index} className="attribute-line">
+                            <strong>{attr.name}: </strong>
+                            <span>{attr.value}</span>
+                          </div>
+                        ))
+                    ) : (
+                      <p className="no-attributes">No attributes available.</p>
+                    )}
                 </div>
                 {/* <button className="view-details-button">View Details</button> */}
               </div>

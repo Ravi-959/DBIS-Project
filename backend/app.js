@@ -207,20 +207,29 @@ app.get('/categories/:id/attributes', async (req, res) => {
       // Get category attributes with options for enum types
       const attributesQuery = `
           SELECT 
-              a.attribute_id, 
-              a.name, 
-              a.data_type,
-              ca.is_required,
-              ca.display_order,
-              (
-                  SELECT json_agg(ao.value ORDER BY ao.value)
-                  FROM attribute_options ao
-                  WHERE ao.attribute_id = a.attribute_id
-              ) AS options
-          FROM category_attributes ca
-          JOIN attributes a ON ca.attribute_id = a.attribute_id
-          WHERE ca.category_id = $1
-          ORDER BY ca.display_order
+            a.attribute_id, 
+            a.name, 
+            a.data_type,
+            ca.is_required,
+            ca.display_order,
+            (
+                SELECT json_agg(ao.value ORDER BY ao.value)
+                FROM attribute_options ao
+                WHERE ao.attribute_id = a.attribute_id
+            ) AS options,
+            CASE 
+                WHEN a.data_type = 'number' THEN 
+                    json_build_object(
+                        'min', a.min_value,
+                        'max', a.max_value
+                    )
+                ELSE NULL
+            END AS range
+        FROM category_attributes ca
+        JOIN attributes a ON ca.attribute_id = a.attribute_id
+        WHERE ca.category_id = $1
+        ORDER BY ca.display_order;
+
       `;
       
       const { rows } = await pool.query(attributesQuery, [id]);
@@ -260,7 +269,15 @@ app.get('/subcategories/:id/attributes', async (req, res) => {
             FROM attribute_options ao
             WHERE ao.attribute_id = a.attribute_id
           ) AS options,
-          'category' AS source
+          'category' AS source,
+            CASE 
+                WHEN a.data_type = 'number' THEN 
+                    json_build_object(
+                        'min', a.min_value,
+                        'max', a.max_value
+                    )
+                ELSE NULL
+            END AS range
         FROM category_attributes ca
         JOIN attributes a ON ca.attribute_id = a.attribute_id
         WHERE ca.category_id = $1
@@ -277,7 +294,15 @@ app.get('/subcategories/:id/attributes', async (req, res) => {
             FROM attribute_options ao
             WHERE ao.attribute_id = a.attribute_id
           ) AS options,
-          'subcategory' AS source
+          'subcategory' AS source,
+            CASE 
+                WHEN a.data_type = 'number' THEN 
+                    json_build_object(
+                        'min', a.min_value,
+                        'max', a.max_value
+                    )
+                ELSE NULL
+            END AS range
         FROM category_attributes ca
         JOIN attributes a ON ca.attribute_id = a.attribute_id
         WHERE ca.subcategory_id = $2
@@ -294,6 +319,7 @@ app.get('/subcategories/:id/attributes', async (req, res) => {
         data_type,
         is_required,
         display_order,
+        range,
         options
       FROM (
         SELECT 
@@ -324,26 +350,20 @@ app.get('/subcategories/:id/attributes', async (req, res) => {
 app.get('/listings-with-images', async (req, res) => {
   try {
     const result = await pool.query(`
-      WITH ranked_attributes AS (
+      WITH attribute_map AS (
         SELECT 
           la.listing_id,
           a.name AS attribute_name,
+          a.data_type,
           CASE 
             WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
             WHEN o.value IS NOT NULL THEN o.value
             ELSE NULL
-          END AS value,
-          ROW_NUMBER() OVER (PARTITION BY la.listing_id ORDER BY la.listing_attribute_id) AS rn
+          END AS value
         FROM listing_attributes la
         JOIN attributes a ON la.attribute_id = a.attribute_id
         LEFT JOIN attribute_options o ON la.option_id = o.option_id
-      ),
-      top3_attributes AS (
-        SELECT listing_id, attribute_name, value
-        FROM ranked_attributes
-        WHERE rn <= 3
       )
-    
       SELECT 
         l.*,
         li.image_url,
@@ -359,7 +379,7 @@ app.get('/listings-with-images', async (req, res) => {
           ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
         FROM listing_images
       ) li ON l.listing_id = li.listing_id AND li.rn = 1
-      LEFT JOIN top3_attributes t ON l.listing_id = t.listing_id
+      LEFT JOIN attribute_map t ON l.listing_id = t.listing_id
       GROUP BY l.listing_id, li.image_url
       ORDER BY l.listing_id
     `);
@@ -599,32 +619,29 @@ app.post("/products_by_subcategory", async (req, res) => {
   const { category_id, subcategory_id } = req.body;
   try {
     const result = await pool.query(`
-      WITH ranked_attributes AS (
+      WITH attribute_map AS (
         SELECT 
           la.listing_id,
+          a.attribute_id,
           a.name AS attribute_name,
+          a.data_type,
           CASE 
             WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
             WHEN o.value IS NOT NULL THEN o.value
             ELSE NULL
-          END AS value,
-          ROW_NUMBER() OVER (PARTITION BY la.listing_id ORDER BY la.listing_attribute_id) AS rn
+          END AS value
         FROM listing_attributes la
         JOIN attributes a ON la.attribute_id = a.attribute_id
         LEFT JOIN attribute_options o ON la.option_id = o.option_id
-      ),
-      top3_attributes AS (
-        SELECT listing_id, attribute_name, value
-        FROM ranked_attributes
-        WHERE rn <= 3
       )
-    
       SELECT 
         l.*,
         li.image_url,
         COALESCE(json_agg(jsonb_build_object(
+          'attribute_id',t.attribute_id,
           'name', t.attribute_name,
-          'value', t.value
+          'value', t.value,
+          'data_type', t.data_type
         )) FILTER (WHERE t.attribute_name IS NOT NULL), '[]') AS attributes
       FROM listings l
       LEFT JOIN (
@@ -634,7 +651,7 @@ app.post("/products_by_subcategory", async (req, res) => {
           ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
         FROM listing_images
       ) li ON l.listing_id = li.listing_id AND li.rn = 1
-      LEFT JOIN top3_attributes t ON l.listing_id = t.listing_id
+      LEFT JOIN attribute_map t ON l.listing_id = t.listing_id
       WHERE l.category_id = $1 AND l.subcategory_id = $2
       GROUP BY l.listing_id, li.image_url
     `, [category_id, subcategory_id]);
@@ -644,6 +661,8 @@ app.post("/products_by_subcategory", async (req, res) => {
         ...row,
         images: row.image_url ? [{ image_url: row.image_url }] : []
       }));
+
+      console.log(listingsWithImages);
 
     res.status(200).json({ products: listingsWithImages });
   } catch (error) {
@@ -659,32 +678,30 @@ app.post("/products_by_category", async (req, res) => {
   try {
 
     const result = await pool.query(`
-      WITH ranked_attributes AS (
+      WITH attribute_map AS (
         SELECT 
           la.listing_id,
+          a.attribute_id,
           a.name AS attribute_name,
+          a.data_type,
           CASE 
             WHEN la.number_value IS NOT NULL THEN la.number_value::TEXT
             WHEN o.value IS NOT NULL THEN o.value
             ELSE NULL
-          END AS value,
-          ROW_NUMBER() OVER (PARTITION BY la.listing_id ORDER BY la.listing_attribute_id) AS rn
+          END AS value
         FROM listing_attributes la
         JOIN attributes a ON la.attribute_id = a.attribute_id
         LEFT JOIN attribute_options o ON la.option_id = o.option_id
-      ),
-      top3_attributes AS (
-        SELECT listing_id, attribute_name, value
-        FROM ranked_attributes
-        WHERE rn <= 3
       )
     
       SELECT 
         l.*,
         li.image_url,
         COALESCE(json_agg(jsonb_build_object(
+          'attribute_id',t.attribute_id,
           'name', t.attribute_name,
-          'value', t.value
+          'value', t.value,
+          'data_type', t.data_type
         )) FILTER (WHERE t.attribute_name IS NOT NULL), '[]') AS attributes
       FROM listings l
       LEFT JOIN (
@@ -694,7 +711,7 @@ app.post("/products_by_category", async (req, res) => {
           ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) AS rn
         FROM listing_images
       ) li ON l.listing_id = li.listing_id AND li.rn = 1
-      LEFT JOIN top3_attributes t ON l.listing_id = t.listing_id
+      LEFT JOIN attribute_map t ON l.listing_id = t.listing_id
       WHERE l.category_id = $1
       GROUP BY l.listing_id, li.image_url
     `, [category_id]);
@@ -705,6 +722,8 @@ app.post("/products_by_category", async (req, res) => {
       ...row,
       images: row.image_url ? [{ image_url: row.image_url }] : []
     }));
+
+    console.log(listingsWithImages.attributes);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ 
@@ -844,7 +863,10 @@ app.get("/messages/:conversation_id", async (req, res) => {
 
 
 app.post('/check-or-create-conversation', async (req, res) => {
-  const { buyer_id, seller_id, listing_id } = req.body;
+  const {seller_id, listing_id } = req.body;
+  const buyer_id = req.session.userId;
+
+  console.log(buyer_id);
 
   // Check if buyer and seller are the same
   if (buyer_id === seller_id) {
@@ -889,6 +911,194 @@ app.get('/product/:listing_id', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching product details' });
+  }
+});
+
+////////////////////////////////////////////////////
+// Wish-list related api calls
+
+
+app.post("/wishlist", async (req, res) => {
+  const { listing_id } = req.body;
+  const user_id = req.session.userId; // Assuming you have user session
+  console.log("Adding to wishlist", listing_id, user_id);
+
+  try {
+
+    const result = await pool.query(
+      `INSERT INTO wishlists (user_id, listing_id) VALUES ($1, $2) RETURNING *`,
+      [user_id, listing_id]
+    );
+    res.status(201).json({ message: "Added to wishlist", item: result.rows[0] });
+  } catch (error) {
+    console.error("Error adding to wishlist", error);
+    res.status(500).json({ message: "Error adding to wishlist" });
+  }
+});
+
+app.get("/wishlist-items", async (req, res) => {
+  const user_id = req.session.userId;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+        l.*,
+        li.image_url
+      FROM listings l
+      LEFT JOIN (
+        SELECT 
+          listing_id, 
+          image_url,
+          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) as rn
+        FROM listing_images
+      ) li ON l.listing_id = li.listing_id AND li.rn = 1
+      WHERE l.listing_id IN (
+        SELECT listing_id FROM wishlists WHERE user_id = $1
+      )`,
+      [user_id]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error fetching wishlist items", error);
+    res.status(500).json({ message: "Error fetching wishlist items" });
+  }
+});
+
+
+
+////////////////////////////////////////////////////
+  // // Search related api-calls
+
+  // app.get("/search-suggestions", async (req, res) => {
+  //   const { query } = req.query;
+    
+  //   try {
+  //     // Search listings with their category/subcategory info
+  //     const result = await pool.query(`
+  //       SELECT 
+  //         l.listing_id,
+  //         l.name AS product_name,
+  //         c.name AS category_name,
+  //         c.category_id,
+  //         s.name AS subcategory_name,
+  //         s.subcategory_id
+  //       FROM listings l
+  //       JOIN categories c ON l.category_id = c.category_id
+  //       JOIN subcategories s ON l.subcategory_id = s.subcategory_id
+  //       WHERE LOWER(l.name) LIKE LOWER($1)
+  //       LIMIT 10
+  //     `, [`%${query}%`]);
+
+  //     // Format the results for the dropdown
+  //     const suggestions = result.rows.map(row => ({
+  //       id: row.listing_id,
+  //       display: `${row.product_name} - ${row.subcategory_name} (${row.category_name})`,
+  //       category_id: row.category_id,
+  //       subcategory_id: row.subcategory_id,
+  //       product_name: row.product_name
+  //     }));
+
+  //     res.status(200).json({ suggestions });
+  //   } catch (error) {
+  //     console.error("Error fetching search suggestions", error);
+  //     res.status(500).json({ 
+  //       message: "Error fetching search suggestions",
+  //       error: error.message 
+  //     });
+  //   }
+  // });
+
+  app.get("/search-suggestions", async (req, res) => {
+    const { query } = req.query;
+  
+    try {
+      const result = await pool.query(`
+        SELECT DISTINCT
+          c.category_id,
+          c.name AS category_name,
+          s.subcategory_id,
+          s.name AS subcategory_name
+        FROM listings l
+        JOIN categories c ON l.category_id = c.category_id
+        JOIN subcategories s ON l.subcategory_id = s.subcategory_id
+        WHERE LOWER(l.name) LIKE LOWER($1)
+        LIMIT 20
+      `, [`%${query}%`]);
+  
+      const suggestions = result.rows.map(row => ({
+        category_id: row.category_id,
+        category_name: row.category_name,
+        subcategory_id: row.subcategory_id,
+        subcategory_name: row.subcategory_name,
+        display: `${row.category_name} > ${row.subcategory_name}`
+      }));
+  
+      res.status(200).json({ suggestions });
+    } catch (error) {
+      console.error("Error fetching category suggestions", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  });
+  
+
+app.get("/search-listings", async (req, res) => {
+  const { query, category_id, subcategory_id } = req.query;
+  
+  try {
+    let sqlQuery = `
+      SELECT 
+        l.*,
+        li.image_url
+      FROM listings l
+      LEFT JOIN (
+        SELECT 
+          listing_id, 
+          image_url,
+          ROW_NUMBER() OVER (PARTITION BY listing_id ORDER BY is_primary DESC, image_id ASC) as rn
+        FROM listing_images
+      ) li ON l.listing_id = li.listing_id AND li.rn = 1
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    let paramCount = 1;
+
+    if (query) {
+      sqlQuery += ` AND LOWER(l.name) LIKE LOWER($${paramCount})`;
+      params.push(`%${query}%`);
+      paramCount++;
+    }
+
+    if (category_id) {
+      sqlQuery += ` AND l.category_id = $${paramCount}`;
+      params.push(category_id);
+      paramCount++;
+    }
+
+    if (subcategory_id) {
+      sqlQuery += ` AND l.subcategory_id = $${paramCount}`;
+      params.push(subcategory_id);
+      paramCount++;
+    }
+
+    const result = await pool.query(sqlQuery, params);
+
+    // Group images with their listings
+    const listingsWithImages = result.rows.map(row => ({
+      ...row,
+      images: row.image_url ? [{ image_url: row.image_url }] : []
+    }));
+
+    res.status(200).json({ 
+      listings: listingsWithImages
+    });
+  } catch (error) {
+    console.error("Error searching listings", error);
+    res.status(500).json({ 
+      message: "Error searching listings",
+      error: error.message 
+    });
   }
 });
 
